@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/lcd-testnet/:path*", "destination": "https://api-testnet.qore.host/:path*" }],
+  "functions": { "api/attest.ts": { "maxDuration": 60 }, "api/advise.ts": { "maxDuration": 60 } },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    }
+  ]
+}

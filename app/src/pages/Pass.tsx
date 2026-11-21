@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { CHAIN_BITS, CHAIN_LABEL, short, uqorToQor, usd } from "../lib/format.js";
 import { useScan, QORE_REST_PROXY } from "../lib/scanStore.js";
+import { ShareCard } from "../components/ShareCard.js";
 import { newSalt, passFieldsFromScan } from "../pass/fields.js";
 import { usdBucketFloor } from "../pass/proof.js";
 import { connectQorex, EXPLORER_TX, FAUCET_URL, qorex, sendProofTx } from "../pass/qorex.js";
@@ -22,7 +23,7 @@ type Phase =
 async function readStatus(addr: string): Promise<AccountStatus> {
   const [acc, bal] = await Promise.all([
     fetch(`${QORE_REST_PROXY}/qorechain/pqc/v1/account/${addr}`).then((r) => (r.ok ? r.json() : { found: false })),
-    fetch(`${QORE_REST_PROXY}/cosmos/bank/v1beta1/balances/${addr}/by_denom?denom=uqor`).then((r) => (r.ok ? r.json() : {})),
+    fetch(`${QORE_REST_PROXY}/cosmos/bank/v1beta1/balances/${addr}/by_denom?denom=uqor`).then((r) => (r.ok ? r.json() : {})) as Promise<{ balance?: { amount?: string } }>,
   ]);
   return {
     pqKey: Boolean(acc?.found && acc?.account?.public_key),
@@ -233,6 +234,8 @@ export function Pass() {
           </div>
         </div>
       </div>
+
+      {phase.k === "done" && s.result && <ShareCard score={s.result.score} exposedUsd={s.result.totals.usd.EXPOSED_NOW} protectedOnQore />}
 
       {phase.k === "busy" && (
         <div className="notice info" style={{ marginTop: 16 }} aria-live="polite">

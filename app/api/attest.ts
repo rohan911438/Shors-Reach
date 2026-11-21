@@ -11,6 +11,7 @@ import { deriveUnifiedAccount, EthNativeSigner, getNetwork, openEvmWindowMsg } f
 import { createPublicClient, createWalletClient, defineChain, http, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
+import { createRateLimiter } from "../src/lib/rateLimit.js";
 import { attestFromNativeTx } from "../src/pass/relayer.js";
 import { QUANTUM_PASS_ABI, QUANTUM_PASS_ADDRESS } from "../src/qore/quantumPass.js";
 
@@ -47,12 +48,17 @@ async function accountSequence(address: string) {
   return { accountNumber: BigInt(acc.account_number ?? "0"), sequence: BigInt(acc.sequence ?? "0") };
 }
 
+// Each successful attest costs the attester gas: 5 requests per IP per hour.
+const limiter = createRateLimiter(5);
+
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 
 export async function POST(request: Request): Promise<Response> {
   const mnemonic = process.env.QORE_ATTESTER_MNEMONIC?.trim();
   if (!mnemonic) return json(503, { error: "Attester not configured on this deployment.", code: "no-attester" });
+  const ip = (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0]!.trim();
+  if (limiter.limited(ip)) return json(429, { error: "Too many requests — try again later.", code: "rate-limited" });
   let txHash = "";
   try {
     txHash = String(((await request.json()) as { txHash?: unknown }).txHash ?? "");

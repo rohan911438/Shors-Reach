@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from "react";
 
 import { ScanInput } from "../components/ScanInput.js";
+import { ShareCard } from "../components/ShareCard.js";
 import { amount, CHAIN_LABEL, FORMAT_LABEL, short, STATUS_COLOR, STATUS_LABEL, uqorToQor, usd } from "../lib/format.js";
 import { href } from "../lib/router.js";
 import { useScan } from "../lib/scanStore.js";
@@ -170,6 +171,8 @@ function Results({ result }: { result: ScanResult }) {
           />
         </section>
       )}
+
+      {visible.length > 0 && <ShareCard score={result.score} exposedUsd={exposedNow} protectedOnQore={result.qore?.pqKeyRegistered ?? false} />}
 
       <p className="faint" style={{ fontSize: 13, marginTop: 24 }}>
         Scanned {new Date(result.scannedAt).toLocaleString()} · data: mempool.space, public EVM RPCs, QoreChain testnet REST, CoinGecko ·{" "}

@@ -7,6 +7,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { fallbackPlan } from "./fallback.js";
 import { SYSTEM_PROMPT, userMessage } from "./prompt.js";
 import { parseSummary, PLAN_JSON_SCHEMA, PlanSchema, type AdviceResponse, type Plan, type Summary } from "./schema.js";
+import { createRateLimiter } from "../lib/rateLimit.js";
 import { containsIdentifier } from "../scan/score/summary.js";
 
 export const DEFAULT_MODEL = "claude-opus-5-5";
@@ -26,20 +27,12 @@ export interface AdvisorEnv {
 }
 
 // ---------------------------------------------------------------- rate limit (per instance, best effort)
-const hits = new Map<string, number[]>();
+const limiter = createRateLimiter(10);
 export function rateLimited(ip: string, limit: number, now = Date.now()): boolean {
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < 3_600_000);
-  if (recent.length >= limit) {
-    hits.set(ip, recent);
-    return true;
-  }
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.delete(hits.keys().next().value as string);
-  return false;
+  return limiter.limited(ip, now, limit);
 }
 export function resetRateLimit() {
-  hits.clear();
+  limiter.reset();
 }
 
 // ---------------------------------------------------------------- model call

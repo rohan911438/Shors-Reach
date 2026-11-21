@@ -55,7 +55,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
         if (e.type === "source-start") return { ...s, progress: [...rest, { source: e.source, label: e.label, state: "run" }] };
         return {
           ...s,
-          progress: [...rest, { source: e.source, label: prev?.label ?? e.source, state: e.ok ? "ok" : "fail", error: e.error }].sort((a, b) =>
+          progress: [...rest, { source: e.source, label: prev?.label ?? e.source, state: (e.ok ? "ok" : "fail") as SourceProgress["state"], error: e.error }].sort((a, b) =>
             a.label.localeCompare(b.label),
           ),
         };

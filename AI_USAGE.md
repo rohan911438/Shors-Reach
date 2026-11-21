@@ -24,5 +24,18 @@ What the AI does **not** do: it never decides a verdict. Exposure verdicts come 
 - Built with **Claude Code** (Claude Opus 5.5) working through a written plan: `docs/prompts/P01…P13`, each with a **validation gate** (tests, live on-chain checks, manual review items marked 👤). Progress and evidence are tracked in `docs/prompts/PROGRESS.md`.
 - Research, architecture and threat-model docs in `docs/` were drafted with Claude and reviewed by the team.
 - Every on-chain claim was verified live rather than trusted: e.g. the QuantumPass contract's ML-DSA-87 verification was tested on qorechain-diana with a real signature (see `docs/architecture/spikes.md`), which is how an ABI bug in the QoreChain SDK's `pqcKeyStatus` definition was found.
-- The scan engine is covered by 64 unit tests on recorded mainnet fixtures; contracts by 13 Foundry tests including fuzzing and attack cases.
+- Tests: 105 app tests (scan engine on recorded mainnet fixtures, advisor, pass proof/relayer) and 18 Foundry tests including fuzzing and attack cases. Live testnet runs (deploy, on-chain ML-DSA mint, QoreX-style attest with a fresh account) are recorded in `deployments/diana.json`.
+- When reality disagreed with the plan, the plan changed: QoreX 0.3.x cannot sign EVM transactions or arbitrary messages, so the AI-proposed design (wallet signs an ML-DSA digest) was replaced by the `attest()` path with a hybrid native proof — documented in `docs/architecture/spikes.md`.
 - Human review: the team decides scope, reviews all generated code and copy, and holds the keys. No secrets (testnet mnemonic, API keys) are ever committed — they live in gitignored `.env` files.
+
+## Share of AI-written code (honest estimate)
+
+| Part | Written by AI | Human role |
+|---|---|---|
+| Scan engine, tests, fixtures recorder | ~95 % | Chose the rules and sources, reviewed verdicts against block explorers |
+| UI pages and styles | ~95 % | Design direction (12 reference sites), copy review, visual QA |
+| Contract + Foundry tests | ~95 % | Reviewed the trust model (self-mint vs attest), approved testnet deploys |
+| Advisor (prompt, schemas, guardrails) | ~95 % | Set the rules: no dates, no shilling, never ask for keys; reads the generated plans |
+| Docs (research, architecture, README) | ~90 % | Idea selection, scope cuts, final wording |
+
+Starting point: the `create-qorechain-dapp` scaffold (first commit, untouched). All keys and decisions stayed with the humans.
