@@ -1,86 +1,100 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import {
-  QORECHAIN_REST_ENDPOINTS,
-  classifyEvmWindowRejection,
-  qorechainTestnet,
-  evmWindowStatus,
-  type EvmWindowRejection,
-} from "@qorechain/evm";
-import { useQuery } from "@tanstack/react-query";
-import { formatEther } from "viem";
-import { useAccount, useBalance, useBlockNumber, useSendTransaction } from "wagmi";
+import { useEffect, useState } from "react";
 
-const REMEDY: Record<EvmWindowRejection, string> = {
-  "no-pqc-key": "This account has no registered ML-DSA-87 key. Register one on the native lane first.",
-  "no-window": "No EVM authorisation window is open. Open one on the native lane, then retry.",
-  exhausted: "The window has run out of blocks, transactions or value. Open a new one.",
-  invalid: "The chain refused the window parameters.",
-};
+import { href, useRoute, type Route } from "./lib/router.js";
+import { Dashboard } from "./pages/Dashboard.js";
+import { Home } from "./pages/Home.js";
+import { Methodology } from "./pages/Methodology.js";
+import { Pass } from "./pages/Pass.js";
+import { Plan } from "./pages/Plan.js";
+import { ScanPage } from "./pages/Scan.js";
+import { QUANTUM_PASS_ADDRESS } from "./qore/quantumPass.js";
 
-/**
- * The REST API of each chain, through the dev server's proxy (vite.config.ts):
- * the public REST endpoints send no CORS headers. Same chains as
- * QORECHAIN_REST_ENDPOINTS.
- */
-const REST_PROXY: Record<number, string | undefined> = Object.fromEntries(
-  Object.keys(QORECHAIN_REST_ENDPOINTS).map((id) => [
-    Number(id),
-    Number(id) === qorechainTestnet.id ? "/lcd-testnet" : "/lcd-mainnet",
-  ]),
-);
+const NAV: { label: string; route: Route; match: Route["name"][] }[] = [
+  { label: "Scan", route: { name: "home" }, match: ["home", "scan"] },
+  { label: "Plan", route: { name: "plan" }, match: ["plan"] },
+  { label: "Quantum Pass", route: { name: "pass" }, match: ["pass"] },
+  { label: "Dashboard", route: { name: "dashboard" }, match: ["dashboard"] },
+  { label: "Methodology", route: { name: "methodology" }, match: ["methodology"] },
+];
 
-/** The account's EVM authorisation window, read over the native-lane REST API. */
-function WindowStatus({ address, chainId }: { address: `0x${string}`; chainId: number }) {
-  const rest = REST_PROXY[chainId];
-  const { data, error, isLoading } = useQuery({
-    queryKey: ["evm-window", chainId, address],
-    queryFn: () => evmWindowStatus({ rest: rest!, address }),
-    enabled: rest !== undefined,
-    refetchInterval: 10_000,
+function useTheme(): [string, () => void] {
+  const [theme, setTheme] = useState<string>(() => {
+    try {
+      return localStorage.getItem("theme") ?? "";
+    } catch {
+      return "";
+    }
   });
-  if (!rest) return <p>Unknown network.</p>;
-  if (isLoading) return <p>Reading the EVM window...</p>;
-  if (error) return <p>Could not read the window: {error.message}</p>;
-  if (!data?.found) {
-    return <p>EVM window: none. Sending from this account is refused until one is opened.</p>;
-  }
-  return (
-    <p>
-      EVM window: {data.live ? "live" : "not usable"} ({data.remainingBlocks.toString()} blocks,{" "}
-      {data.remainingTxs.toString()} transactions, {data.remainingValue.toString()} uqor left)
-    </p>
-  );
+  useEffect(() => {
+    if (theme) document.documentElement.dataset.theme = theme;
+    else delete document.documentElement.dataset.theme;
+    try {
+      if (theme) localStorage.setItem("theme", theme);
+    } catch {
+      /* storage unavailable */
+    }
+  }, [theme]);
+  const toggle = () => {
+    const dark = theme ? theme === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setTheme(dark ? "light" : "dark");
+  };
+  return [theme, toggle];
 }
 
 export function App() {
-  const { address, chainId, isConnected } = useAccount();
-  const { data: balance } = useBalance({ address });
-  const { data: block } = useBlockNumber({ watch: true });
-  const send = useSendTransaction();
-  const rejection = send.error ? classifyEvmWindowRejection(send.error) : undefined;
+  const route = useRoute();
+  const [, toggleTheme] = useTheme();
 
   return (
-    <main style={{ fontFamily: "system-ui, sans-serif", maxWidth: 720, margin: "2rem auto", padding: "0 1rem" }}>
-      <h1>QoreChain EVM dApp</h1>
-      <ConnectButton />
-      <p>Latest block: {block?.toString() ?? "..."}</p>
-
-      {isConnected && address && chainId ? (
-        <section>
-          <p>
-            Account <code>{address}</code> on chain {chainId}
-          </p>
-          <p>Balance: {balance ? `${formatEther(balance.value)} QOR` : "..."}</p>
-          <WindowStatus address={address} chainId={chainId} />
-          <button type="button" disabled={send.isPending} onClick={() => send.sendTransaction({ to: address, value: 0n })}>
-            Send 0 QOR to yourself
+    <>
+      <header className="header">
+        <div className="wrap">
+          <a className="brand" href="#/">
+            <img src="/favicon.svg" alt="" />
+            Shor's Reach
+          </a>
+          <nav className="nav" aria-label="Main">
+            {NAV.map((n) => (
+              <a key={n.label} href={href(n.route)} aria-current={n.match.includes(route.name) ? "page" : undefined}>
+                {n.label}
+              </a>
+            ))}
+          </nav>
+          <div className="spacer" />
+          <button className="icon-btn" type="button" onClick={toggleTheme} aria-label="Toggle light/dark theme" title="Toggle theme">
+            ◐
           </button>
-          {send.data && <p>Sent: {send.data}</p>}
-          {send.error && <p>Refused: {rejection ? REMEDY[rejection] : send.error.message}</p>}
-        </section>
-      ) : (
-        <p>Connect a wallet to read your account.</p>
-      )}
-    </main>
+          <ConnectButton chainStatus="icon" accountStatus="avatar" showBalance={false} />
+        </div>
+      </header>
+
+      <main className="wrap">
+        {route.name === "home" && <Home />}
+        {route.name === "scan" && <ScanPage input={route.input} />}
+        {route.name === "plan" && <Plan />}
+        {route.name === "pass" && <Pass />}
+        {route.name === "dashboard" && <Dashboard />}
+        {route.name === "methodology" && <Methodology anchor={route.anchor} />}
+      </main>
+
+      <footer className="footer">
+        <div className="wrap">
+          <span>
+            Shor's Reach · built for the QoreChain Developer Fest <b>#BuildBeforeQDay</b> · MIT
+          </span>
+          <span className="row" style={{ gap: 18 }}>
+            <a href="https://github.com/rohan911438/Shors-Reach" target="_blank" rel="noreferrer">
+              GitHub
+            </a>
+            <a href={`https://explore.qore.network/address/${QUANTUM_PASS_ADDRESS}`} target="_blank" rel="noreferrer">
+              Contract
+            </a>
+            <a href="#/methodology">Methodology &amp; limits</a>
+            <span>We never ask for seeds or private keys.</span>
+          </span>
+        </div>
+      </footer>
+    </>
   );
 }
