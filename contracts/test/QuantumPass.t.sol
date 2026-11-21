@@ -33,6 +33,7 @@ contract QuantumPassTest is Test {
     address constant STATUS = 0x0000000000000000000000000000000000000a02;
     address alice = address(0xA11CE);
     address bob = address(0xB0B);
+    address relayer = address(0x5E1A7);
     bytes alicePk;
     bytes bobPk;
 
@@ -41,7 +42,7 @@ contract QuantumPassTest is Test {
     function setUp() public {
         vm.etch(STATUS, address(new MockKeyStatus()).code);
         vm.etch(VERIFY, address(new MockVerify()).code);
-        pass = new QuantumPass();
+        pass = new QuantumPass(relayer);
         // Real ML-DSA-87 sizes: 2,592-byte public key.
         alicePk = _bytes(2592, 0xA1);
         bobPk = _bytes(2592, 0xB0);
@@ -191,5 +192,43 @@ contract QuantumPassTest is Test {
         assertTrue(base != pass.digest(bob, h, s, m, u));
         assertTrue(base != pass.digest(alice, h, s, m ^ 1, u));
         assertTrue(base != pass.digest(alice, h, s, m, u ^ 1));
+    }
+
+    // ------------------------------------------------------------------ attested path (QoreX native proof)
+    function test_AttestHappyPath() public {
+        vm.prank(relayer);
+        pass.attest(bob, keccak256("s"), 6, 0x0005, 4, keccak256("nativeTx1"));
+        (, uint8 score,,,,, bytes32 keyHash) = pass.passOf(bob);
+        assertEq(score, 6);
+        assertEq(keyHash, keccak256(bobPk));
+        assertTrue(pass.nativeTxUsed(keccak256("nativeTx1")));
+        assertEq(pass.totalPasses(), 1);
+    }
+
+    function test_RevertWhen_AttestNotAttester() public {
+        vm.prank(alice);
+        vm.expectRevert(QuantumPass.NotAttester.selector);
+        pass.attest(bob, keccak256("s"), 1, 1, 1, keccak256("t"));
+    }
+
+    function test_RevertWhen_AttestProofReused() public {
+        vm.startPrank(relayer);
+        pass.attest(bob, keccak256("s"), 1, 1, 1, keccak256("t"));
+        vm.expectRevert(QuantumPass.ProofReused.selector);
+        pass.attest(alice, keccak256("s"), 1, 1, 1, keccak256("t"));
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_AttestHolderHasNoPqKey() public {
+        vm.prank(relayer);
+        vm.expectRevert(QuantumPass.PqKeyNotRegistered.selector);
+        pass.attest(address(0xCA201), keccak256("s"), 1, 1, 1, keccak256("t"));
+    }
+
+    function test_RevertWhen_AttestAfterSelfMint() public {
+        _mint(alice, alicePk, keccak256("a"), 1, 1, 1);
+        vm.prank(relayer);
+        vm.expectRevert(QuantumPass.AlreadyMinted.selector);
+        pass.attest(alice, keccak256("s"), 1, 1, 1, keccak256("t"));
     }
 }

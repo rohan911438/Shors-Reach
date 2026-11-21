@@ -42,6 +42,22 @@ function apiDev(env: Record<string, string>): Plugin {
           res.end(JSON.stringify({ error: String(err) }));
         }
       });
+      // Attester (needs QORE_ATTESTER_MNEMONIC in app/.env — gitignored, testnet only).
+      server.middlewares.use("/api/attest", async (req, res) => {
+        try {
+          if (env.QORE_ATTESTER_MNEMONIC) process.env.QORE_ATTESTER_MNEMONIC = env.QORE_ATTESTER_MNEMONIC;
+          const chunks: Buffer[] = [];
+          for await (const c of req) chunks.push(c as Buffer);
+          const mod = (await server.ssrLoadModule("/api/attest.ts")) as { POST: (r: Request) => Promise<Response> };
+          const out = await mod.POST(new Request("http://localhost/api/attest", { method: "POST", body: Buffer.concat(chunks) }));
+          res.statusCode = out.status;
+          res.setHeader("content-type", "application/json");
+          res.end(await out.text());
+        } catch (err) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+      });
     },
   };
 }

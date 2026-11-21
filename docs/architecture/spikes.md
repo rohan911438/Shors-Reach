@@ -26,3 +26,14 @@
 | Signing | `pqcSign(secretKey, digestBytes)` from `@qorechain/sdk` (deterministic FIPS-204) | CONFIRMED |
 | Design decision | QuantumPass reads the **registered** key from 0x0a02 and verifies with 0x0a01 → caller can't use a throwaway key | DONE |
 | Deployed | `QuantumPass` `0x6e48187e3717af4ccf6c9c27716c5d77d7af5c5d`, first mint `0x6914aca7…3cc8` (gasUsed 1,000,000) | DONE |
+
+## P10 — QoreX capabilities and the pass path (2026-11-21)
+
+| Question | Answer | Status |
+|---|---|---|
+| Can a dApp get EVM txs or arbitrary signatures from QoreX? | **No (QoreX 0.3.x).** EVM provider answers only `eth_chainId`/`eth_accounts`/`eth_requestAccounts`/`wallet_switchEthereumChain`; `signArbitrary` is refused. Native `signAndBroadcast` works and always adds the ML-DSA-87 layer. PQ key registration is wallet-only. (`@qorechain/qorex-types` docs) | CONFIRMED |
+| Consequence | A QoreX user cannot call `QuantumPass.mint()` (needs an EVM tx + ML-DSA signature over a digest) | — |
+| Design | **Two paths.** (1) `mint()` — fully on-chain ML-DSA verify (0x0a01) for accounts that can send EVM txs. (2) `attest()` — QoreX path: user sends a hybrid-signed native self-transfer (1 uqor) whose memo commits to the pass fields; attester verifies the committed tx (code 0, `PQCHybridSignature` alg 1, self-transfer, memo) and calls `attest()`; contract re-reads the key registry (0x0a02), binds `pqKeyHash`, burns the proof hash. Attester is immutable, no admin. | DONE |
+| v2 deployed | `0x4f54b69693458523223504b48fa7cd44657a56df` (deploy `0x28f58054…7e2e`, window `C584F991…3972` hybrid), self-mint `0xb6ac662a…a38d` | DONE |
+| Live attest E2E (fresh account, index 1) | proof `926E749D…E55F` (hybrid, memo) → `/api/attest` → `0x872179a1…2f60`; `passOf` populated, `pqKeyHash` = registered key, `nativeTxUsed` = true, totals 2 | DONE |
+| Note | One `/api/attest` call failed with a transient `fetch failed`; retry succeeded → page retries 404/502 | — |

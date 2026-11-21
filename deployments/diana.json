@@ -1,17 +1,31 @@
 {
   "network": "qorechain-diana",
   "evmChainId": 9800,
-  "QuantumPass": "0x6e48187e3717af4ccf6c9c27716c5d77d7af5c5d",
-  "deployTx": "0x7a881be724894ad4dd0bae8721945498ef0304838def11de88d1059ffa62e588",
-  "deployBlock": 10503138,
-  "deployer": "0x707B92f6276799f928CCe4D5873f5A2babF85347",
-  "deployerQor": "qor1wpae9a38v7vlj2xvun2cw0669w4ls568zar4w8",
-  "firstMintTx": "0x6914aca7cc955f7fc8ba5fd106478fcd04866f4d9e12ffc0186ffbff9cc93cc8",
-  "firstMintGasUsed": 1000000,
-  "firstMintStatus": "success",
   "hybridWindowTx": "82CAAC0311B6927598BBD789BFD250CE236DD6DD0B241CB444B511CFE74A1104",
   "precompiles": {
     "pqcVerify": "0x0000000000000000000000000000000000000a01",
     "pqcKeyStatus": "0x0000000000000000000000000000000000000a02"
+  },
+  "v1": {
+    "QuantumPass": "0x6e48187e3717af4ccf6c9c27716c5d77d7af5c5d",
+    "deployTx": "0x7a881be724894ad4dd0bae8721945498ef0304838def11de88d1059ffa62e588",
+    "firstMintTx": "0x6914aca7cc955f7fc8ba5fd106478fcd04866f4d9e12ffc0186ffbff9cc93cc8",
+    "note": "self-mint only (superseded by v2 with attest path)"
+  },
+  "windowTx": "C584F991E1A13A89B6967179A0B4F0F2DDF2145A3430A5D9529B1E72CDEC3972",
+  "QuantumPass": "0x4f54b69693458523223504b48fa7cd44657a56df",
+  "attester": "0x707B92f6276799f928CCe4D5873f5A2babF85347",
+  "deployTx": "0x28f58054f338364083b4f0c9b17751dbdd1df0b27c42974c6d6a553fe7e17e2e",
+  "deployBlock": 10505985,
+  "deployer": "0x707B92f6276799f928CCe4D5873f5A2babF85347",
+  "deployerQor": "qor1wpae9a38v7vlj2xvun2cw0669w4ls568zar4w8",
+  "firstMintTx": "0xb6ac662a1d2618febcc1e20ad337776b1a9af89a37a00d8a63b38ce3e5b4a38d",
+  "firstMintGasUsed": 1000000,
+  "firstMintStatus": "success",
+  "attestE2E": {
+    "note": "fresh account (mnemonic index 1) via the QoreX-equivalent path: hybrid native proof tx -> POST /api/attest -> attest()",
+    "holder": "0x17CBb4cAe0B421714829f64612Cc81EB67848A33",
+    "proofTx": "926E749DC6C1641ADDF6E87158E836C48084B0528707EC6D2B6849CCE56FE55F",
+    "attestTx": "0x872179a1355536531bd3f496b297e8d67d6b6ee86813131e38d5d42b739a2f60"
   }
 }

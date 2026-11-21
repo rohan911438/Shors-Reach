@@ -1,7 +1,18 @@
 // Generated from contracts/out (forge build). Do not edit by hand.
-export const QUANTUM_PASS_ADDRESS = "0x6e48187e3717af4ccf6c9c27716c5d77d7af5c5d" as const;
-export const QUANTUM_PASS_DEPLOY_BLOCK = 10503138n;
+export const QUANTUM_PASS_ADDRESS = "0x4f54b69693458523223504b48fa7cd44657a56df" as const;
+export const QUANTUM_PASS_DEPLOY_BLOCK = 10505985n;
 export const QUANTUM_PASS_ABI = [
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "attester_",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
   {
     "type": "function",
     "name": "approve",
@@ -22,6 +33,44 @@ export const QUANTUM_PASS_ABI = [
   },
   {
     "type": "function",
+    "name": "attest",
+    "inputs": [
+      {
+        "name": "holder",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "scanHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "scoreBucket",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "chainsMask",
+        "type": "uint16",
+        "internalType": "uint16"
+      },
+      {
+        "name": "exposedUsdBucket",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "nativeTxHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "attestedExposedUsdFloor",
     "inputs": [],
     "outputs": [
@@ -29,6 +78,19 @@ export const QUANTUM_PASS_ABI = [
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "attester",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -208,6 +270,25 @@ export const QUANTUM_PASS_ABI = [
         "name": "",
         "type": "string",
         "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nativeTxUsed",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "stateMutability": "view"
@@ -483,6 +564,25 @@ export const QUANTUM_PASS_ABI = [
   },
   {
     "type": "event",
+    "name": "NativeProof",
+    "inputs": [
+      {
+        "name": "holder",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "nativeTxHash",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "PassMinted",
     "inputs": [
       {
@@ -566,6 +666,11 @@ export const QUANTUM_PASS_ABI = [
   },
   {
     "type": "error",
+    "name": "NotAttester",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "OutOfRange",
     "inputs": []
   },
@@ -577,6 +682,11 @@ export const QUANTUM_PASS_ABI = [
   {
     "type": "error",
     "name": "PrecompileUnavailable",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ProofReused",
     "inputs": []
   },
   {

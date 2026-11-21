@@ -83,12 +83,13 @@ if (!w.live || w.remainingTxs < needTxs) {
 
 // 2) Deploy
 if (!address) {
-  const hash = await wallet.deployContract({ abi, bytecode: artifact.bytecode.object as Hex });
+  // The deployer account doubles as the attester (relayer) for QoreX users' native proofs.
+  const hash = await wallet.deployContract({ abi, bytecode: artifact.bytecode.object as Hex, args: [acc.evm] });
   const rcpt = await pub.waitForTransactionReceipt({ hash, timeout: 120_000 });
   if (rcpt.status !== "success" || !rcpt.contractAddress) throw new Error(`deploy failed: ${hash}`);
   address = rcpt.contractAddress;
   console.log(`QuantumPass deployed at ${address} (tx ${hash}, block ${rcpt.blockNumber})`);
-  Object.assign(record, { network: "qorechain-diana", evmChainId: 9800, QuantumPass: address, deployTx: hash, deployBlock: Number(rcpt.blockNumber), deployer: acc.evm, deployerQor: acc.cosmos });
+  Object.assign(record, { network: "qorechain-diana", evmChainId: 9800, QuantumPass: address, attester: acc.evm, deployTx: hash, deployBlock: Number(rcpt.blockNumber), deployer: acc.evm, deployerQor: acc.cosmos });
 }
 
 // 3) First mint with a real ML-DSA-87 signature over the contract's digest.

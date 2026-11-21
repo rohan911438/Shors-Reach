@@ -33,6 +33,14 @@ contract QuantumPass {
     uint256[16] public passesByChain;
     /// Sum over passes of the lower bound of their exposed-USD bucket (10^(k-1)) — "at least $X attested".
     uint256 public attestedExposedUsdFloor;
+    /// Relayer allowed to call attest(). Immutable: no admin, no upgrades.
+    address public immutable attester;
+    /// Native QoreChain tx hashes already used as proof by attest().
+    mapping(bytes32 => bool) public nativeTxUsed;
+
+    constructor(address attester_) {
+        attester = attester_;
+    }
 
     // ------------------------------------------------------------------ events & errors
     event PassMinted(
@@ -47,6 +55,8 @@ contract QuantumPass {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     /// ERC-5192
     event Locked(uint256 tokenId);
+    /// Emitted by attest(): the native hybrid-signed tx that carried the holder's commitment.
+    event NativeProof(address indexed holder, bytes32 nativeTxHash);
 
     error AlreadyMinted();
     error PqKeyNotRegistered();
@@ -55,6 +65,8 @@ contract QuantumPass {
     error OutOfRange();
     error Soulbound();
     error NoPass();
+    error NotAttester();
+    error ProofReused();
 
     // ------------------------------------------------------------------ mint
     /// @notice The 32-byte digest the holder must sign with their registered ML-DSA-87 key.
@@ -79,6 +91,8 @@ contract QuantumPass {
         );
     }
 
+    /// @notice Self-mint: the caller proves control of its registered ML-DSA-87 key by signing `digest(...)`;
+    /// the signature is verified on-chain by the pqcVerify precompile.
     function mint(
         bytes32 scanHash,
         uint8 scoreBucket,
@@ -86,17 +100,54 @@ contract QuantumPass {
         uint8 exposedUsdBucket,
         bytes calldata pqSignature
     ) external {
-        if (passOf[msg.sender].mintedAt != 0) revert AlreadyMinted();
-        if (scoreBucket > 10 || exposedUsdBucket > 15) revert OutOfRange();
-
+        _checkNew(msg.sender, scoreBucket, exposedUsdBucket);
         (bool registered, uint8 algorithm, bytes memory pqPubkey) = _keyStatus(msg.sender);
         if (!registered || pqPubkey.length == 0) revert PqKeyNotRegistered();
 
         bytes32 d = digest(msg.sender, scanHash, scoreBucket, chainsMask, exposedUsdBucket);
         if (!_pqVerify(pqPubkey, pqSignature, abi.encodePacked(d))) revert BadPqSignature();
 
-        bytes32 keyHash = keccak256(pqPubkey);
-        passOf[msg.sender] = Pass({
+        _record(msg.sender, scanHash, scoreBucket, chainsMask, exposedUsdBucket, algorithm, keccak256(pqPubkey));
+    }
+
+    /// @notice Attested mint for wallets that sign only native transactions (QoreX today).
+    /// The holder commits to `digest(...)` in the memo of a native QoreChain transaction, which the chain only
+    /// accepts with a valid hybrid secp256k1 + ML-DSA-87 signature from the holder's registered key. The attester
+    /// checks that transaction off-chain; this contract still re-checks the registry on-chain and binds the pass
+    /// to the registered key, and each native transaction can be used once.
+    function attest(
+        address holder,
+        bytes32 scanHash,
+        uint8 scoreBucket,
+        uint16 chainsMask,
+        uint8 exposedUsdBucket,
+        bytes32 nativeTxHash
+    ) external {
+        if (msg.sender != attester) revert NotAttester();
+        if (nativeTxUsed[nativeTxHash]) revert ProofReused();
+        _checkNew(holder, scoreBucket, exposedUsdBucket);
+        (bool registered, uint8 algorithm, bytes memory pqPubkey) = _keyStatus(holder);
+        if (!registered || pqPubkey.length == 0) revert PqKeyNotRegistered();
+        nativeTxUsed[nativeTxHash] = true;
+        _record(holder, scanHash, scoreBucket, chainsMask, exposedUsdBucket, algorithm, keccak256(pqPubkey));
+        emit NativeProof(holder, nativeTxHash);
+    }
+
+    function _checkNew(address holder, uint8 scoreBucket, uint8 exposedUsdBucket) internal view {
+        if (passOf[holder].mintedAt != 0) revert AlreadyMinted();
+        if (scoreBucket > 10 || exposedUsdBucket > 15) revert OutOfRange();
+    }
+
+    function _record(
+        address holder,
+        bytes32 scanHash,
+        uint8 scoreBucket,
+        uint16 chainsMask,
+        uint8 exposedUsdBucket,
+        uint8 algorithm,
+        bytes32 keyHash
+    ) internal {
+        passOf[holder] = Pass({
             scanHash: scanHash,
             scoreBucket: scoreBucket,
             chainsMask: chainsMask,
@@ -115,9 +166,9 @@ contract QuantumPass {
             if (exposedUsdBucket > 0) attestedExposedUsdFloor += 10 ** (exposedUsdBucket - 1);
         }
 
-        uint256 tokenId = uint256(uint160(msg.sender));
-        emit PassMinted(msg.sender, scanHash, scoreBucket, chainsMask, exposedUsdBucket, keyHash);
-        emit Transfer(address(0), msg.sender, tokenId);
+        uint256 tokenId = uint256(uint160(holder));
+        emit PassMinted(holder, scanHash, scoreBucket, chainsMask, exposedUsdBucket, keyHash);
+        emit Transfer(address(0), holder, tokenId);
         emit Locked(tokenId);
     }
 
