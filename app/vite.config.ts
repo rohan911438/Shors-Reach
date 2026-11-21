@@ -1,10 +1,9 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 
 // The public REST APIs send no CORS headers, so the browser reaches them
 // through the dev (and preview) server: /lcd-testnet and /lcd-mainnet are
-// forwarded to each network's REST endpoint (see REST_PROXY in src/App.tsx).
-// In production, serve the app behind a proxy that does the same.
+// forwarded to each network's REST endpoint. In production a Vercel rewrite does the same.
 const rest = (target: string) => ({
   target,
   changeOrigin: true,
@@ -15,8 +14,43 @@ const proxy = {
   "/lcd-mainnet": rest("https://api.qore.host"),
 };
 
-export default defineConfig({
-  plugins: [react()],
-  server: { port: 5173, proxy },
-  preview: { proxy },
+/** Serves api/advise.ts during `vite dev`, so the advisor works locally without `vercel dev`. */
+function apiDev(env: Record<string, string>): Plugin {
+  return {
+    name: "shors-reach-api-dev",
+    configureServer(server) {
+      server.middlewares.use("/api/advise", async (req, res) => {
+        try {
+          const chunks: Buffer[] = [];
+          for await (const c of req) chunks.push(c as Buffer);
+          const mod = (await server.ssrLoadModule("/src/advisor/server.ts")) as typeof import("./src/advisor/server");
+          const request = new Request("http://localhost/api/advise", {
+            method: req.method,
+            headers: { "content-type": "application/json" },
+            body: req.method === "POST" ? Buffer.concat(chunks) : undefined,
+          });
+          const out = await mod.handleAdvise(
+            request,
+            { apiKey: env.ANTHROPIC_API_KEY, model: env.ADVISOR_MODEL, rateLimit: 100, log: (m) => server.config.logger.info(m) },
+            req.socket.remoteAddress ?? "local",
+          );
+          res.statusCode = out.status;
+          res.setHeader("content-type", "application/json");
+          res.end(await out.text());
+        } catch (err) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+      });
+    },
+  };
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  return {
+    plugins: [react(), apiDev(env)],
+    server: { port: 5173, proxy },
+    preview: { proxy },
+  };
 });

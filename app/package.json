@@ -14,6 +14,7 @@
     "scan:live": "tsx scripts/scan-live.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.12.0",
     "@noble/curves": "^1.9.1",
     "@noble/hashes": "^1.8.0",
     "@qorechain/evm": "^0.14.0",
@@ -26,7 +27,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "viem": "~2.53.1",
-    "wagmi": "^2.19.5"
+    "wagmi": "^2.19.5",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
