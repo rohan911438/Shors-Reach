@@ -14,3 +14,15 @@
 | QoreX from a dApp (native) | `@qorechain/qorex-rainbowkit` connects the EVM lane; native hybrid signing via QoreX → to be wired in P10 (`@qorechain/qorex-*` kits) | OPEN (P10) |
 | Precompiles 0x0A01 / 0x0A02 ABI | — | OPEN (P07) |
 | Browser access to REST | Public REST has **no CORS** → app uses `/lcd-testnet` proxy (vite dev) and a Vercel rewrite in prod | CONFIRMED (template note) |
+
+## P07 — PQC precompiles (2026-11-21)
+
+| Question | Answer | Status |
+|---|---|---|
+| Active on diana? | `/cosmos/evm/vm/v1/params.active_static_precompiles` = `0x…0901`, `0x…0C01`, `0x…0a01`, `0x…0a02` | CONFIRMED |
+| `pqcVerify(bytes pubkey, bytes signature, bytes message) → bool` at `0x…0a01` | Correct ML-DSA-87 sig over a 32-byte digest → `true`; wrong message → `false`. Direct call ≈ 312k gas | CONFIRMED (tested) |
+| `pqcKeyStatus(address)` at `0x…0a02` | Returns **4 words**: `(bool registered, uint8 algorithmId, bytes pubkey, uint256)`; the SDK's 3-output `IQORE_PQC_ABI` fails to decode in viem. Solidity `abi.decode(ret,(bool,uint8,bytes))` works | CONFIRMED — SDK bug worth reporting |
+| Address literals | SDK exports mixed-case `0x…0A01` which viem and solc reject as bad checksums → use lowercase | CONFIRMED |
+| Signing | `pqcSign(secretKey, digestBytes)` from `@qorechain/sdk` (deterministic FIPS-204) | CONFIRMED |
+| Design decision | QuantumPass reads the **registered** key from 0x0a02 and verifies with 0x0a01 → caller can't use a throwaway key | DONE |
+| Deployed | `QuantumPass` `0x6e48187e3717af4ccf6c9c27716c5d77d7af5c5d`, first mint `0x6914aca7…3cc8` (gasUsed 1,000,000) | DONE |

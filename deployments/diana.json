@@ -1,0 +1,17 @@
+{
+  "network": "qorechain-diana",
+  "evmChainId": 9800,
+  "QuantumPass": "0x6e48187e3717af4ccf6c9c27716c5d77d7af5c5d",
+  "deployTx": "0x7a881be724894ad4dd0bae8721945498ef0304838def11de88d1059ffa62e588",
+  "deployBlock": 10503138,
+  "deployer": "0x707B92f6276799f928CCe4D5873f5A2babF85347",
+  "deployerQor": "qor1wpae9a38v7vlj2xvun2cw0669w4ls568zar4w8",
+  "firstMintTx": "0x6914aca7cc955f7fc8ba5fd106478fcd04866f4d9e12ffc0186ffbff9cc93cc8",
+  "firstMintGasUsed": 1000000,
+  "firstMintStatus": "success",
+  "hybridWindowTx": "82CAAC0311B6927598BBD789BFD250CE236DD6DD0B241CB444B511CFE74A1104",
+  "precompiles": {
+    "pqcVerify": "0x0000000000000000000000000000000000000a01",
+    "pqcKeyStatus": "0x0000000000000000000000000000000000000a02"
+  }
+}

@@ -10,7 +10,7 @@ Mark each prompt ✅ only after its validation gate fully passes. Record evidenc
 | P04 BTC key-level scan | ✅ | 21 Nov | pubkey extraction, 7 sibling forms incl. BIP-86, P2PK scripthash, xpub (BIP-84 vectors pass). Live: genesis key → 4 holdings ≈ $6.46M EXPOSED_NOW, evidence = genesis coinbase |
 | P05 EVM + QoreChain scanners | ✅ | 21 Nov | 7 EVM chains, cross-chain rule, EIP-7702, Safe owners, QoreChain PQ key + window; live vitalik.eth + our account verified |
 | P06 Pricing, scoring, orchestrator | ✅ | 21 Nov | CoinGecko, evidence invariant, score, anonymiser + leak test, `npm run scan:live`. **64/64 tests** on recorded fixtures |
-| P07 QuantumPass contract + deploy | ⬜ | | |
+| P07 QuantumPass contract + deploy | ✅ | 21 Nov | `0x6e48187e3717af4ccf6c9c27716c5d77d7af5c5d` (deploy `0x7a881be7…e588`), first mint `0x6914aca7…3cc8` verified ML-DSA-87 on-chain via 0x0a01 against key from 0x0a02. 13 contract tests incl. fuzz + attack cases |
 | P08 Scan UI + methodology | ⬜ | | |
 | P09 AI advisor | ⬜ | | |
 | P10 Quantum Pass flow e2e | ⬜ | | |
