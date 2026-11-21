@@ -1,0 +1,22 @@
+# dependencies & builds
+node_modules/
+dist/
+out/
+cache/
+broadcast/
+contracts/lib/
+coverage/
+playwright-report/
+test-results/
+.vercel/
+
+# secrets — never commit
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
