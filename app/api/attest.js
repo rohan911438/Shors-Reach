@@ -174807,6 +174807,34 @@ var enc3 = new TextEncoder();
 // server/attest.ts
 init_esm();
 
+// src/lib/http.ts
+async function readCapped(req, maxBytes) {
+  const declared = Number(req.headers.get("content-length") ?? "");
+  if (Number.isFinite(declared) && declared > maxBytes) return null;
+  if (!req.body) return "";
+  const reader = req.body.getReader();
+  const chunks = [];
+  let size5 = 0;
+  for (; ; ) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size5 += value.byteLength;
+    if (size5 > maxBytes) {
+      await reader.cancel().catch(() => {
+      });
+      return null;
+    }
+    chunks.push(value);
+  }
+  const all = new Uint8Array(size5);
+  let off = 0;
+  for (const c of chunks) {
+    all.set(c, off);
+    off += c.byteLength;
+  }
+  return new TextDecoder().decode(all);
+}
+
 // src/lib/rateLimit.ts
 function createRateLimiter(limit, windowMs = 36e5) {
   const hits = /* @__PURE__ */ new Map();
@@ -175629,7 +175657,9 @@ async function POST(request) {
   if (limiter.limited(ip)) return json(429, { error: "Too many requests \u2014 try again later.", code: "rate-limited" });
   let txHash = "";
   try {
-    txHash = String((await request.json()).txHash ?? "");
+    const text = await readCapped(request, 2048);
+    if (text === null) return json(413, { error: "Request body too large.", code: "too-large" });
+    txHash = String(JSON.parse(text).txHash ?? "");
   } catch {
     return json(400, { error: "Body must be JSON { txHash }.", code: "bad-body" });
   }

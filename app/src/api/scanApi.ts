@@ -8,6 +8,7 @@
 import { detectInput, InputError, REASONS, scan, type EngineOptions } from "../scan/index.js";
 import type { Holding, ScanResult, Status } from "../scan/types.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
+import { BODY_TOO_LARGE, readCapped } from "../lib/http.js";
 import { looksLikeSeedPhrase } from "../lib/seed.js";
 
 export const API_VERSION = "1";
@@ -128,7 +129,9 @@ export async function handleScanApi(req: Request, d: ScanApiDeps, ip = "unknown"
 
   let body: unknown;
   try {
-    body = JSON.parse(await req.text());
+    const text = await readCapped(req, 4096);
+    if (text === null) return json(413, BODY_TOO_LARGE);
+    body = JSON.parse(text);
   } catch {
     return json(400, { error: "Send JSON: { \"input\": \"…\" }.", code: "bad-json" });
   }

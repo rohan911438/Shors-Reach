@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { ScanResult } from "../scan/types.js";
-import { handleAlerts, MAX_PER_TARGET, resetAlertsRateLimit, type AlertsDeps, type Sub } from "./handler.js";
+import { handleAlerts, MAX_PER_TARGET, resetAlertsRateLimit, runCron, type AlertsDeps, type Sub } from "./handler.js";
 import { memoryKV } from "./kv.js";
 
 const ADDR = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
@@ -207,5 +207,25 @@ describe("alerts — cron", () => {
     await handleAlerts(post({ action: "subscribe", input: ADDR, channel: "email", email: "me@example.com" }), deps);
     await handleAlerts(post({ action: "confirm", ...linkParts(mail[0]!.text, "confirm") }), deps);
     expect(await (await handleAlerts(cron(), deps)).json()).toEqual({ checked: 0, alerted: 0, errors: 1 });
+  });
+});
+
+describe("alerts — cron cleanup", () => {
+  it("drops a Telegram subscription when the user has blocked the bot (403)", async () => {
+    const { deps, kv } = setup();
+    const r = await (await handleAlerts(post({ action: "subscribe", input: ADDR, channel: "telegram", label: "Hot" }), deps)).json();
+    const token = /start=([0-9a-f]+)/.exec(r.link)![1]!;
+    await handleAlerts(post({ message: { chat: { id: 42, type: "private" }, text: `/start ${token}` } }, "/api/alerts?action=telegram", { "x-telegram-bot-api-secret-token": "tg-secret" }), deps);
+    const sub = [...kv.dump().entries()].find(([k]) => k.startsWith("alerts:sub:"))![1] as Sub;
+    // Force a change so the cron tries to deliver.
+    await kv.set(`alerts:sub:${sub.id}`, { ...sub, snapshot: { ...sub.snapshot!, score: 0, exposedUsd: 0, holdings: [] } });
+    const blocked = {
+      ...deps,
+      scanner: async () => ({ ...(await deps.scanner(ADDR)), score: 90 }),
+      telegram: { username: "shors_bot", send: async () => Promise.reject(new Error("telegram failed: 403")) },
+    };
+    const out = await runCron(blocked, kv);
+    expect(out.errors).toBe(0);
+    expect([...kv.dump().keys()].filter((k) => k.startsWith("alerts:sub:"))).toEqual([]);
   });
 });

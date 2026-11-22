@@ -93,6 +93,18 @@ export function App() {
       </Suspense>
     );
 
+  // Clickjacking guard: the full app (wallet connect, transactions) never runs inside someone else's frame.
+  // Only the embed route above is meant to be framed; it shares this URL path, so a frame-ancestors header can't tell them apart.
+  if (typeof window !== "undefined" && window.top !== window.self)
+    return (
+      <main className="container" style={{ padding: 24 }}>
+        <p>Shor's Reach can't run inside another site's frame.</p>
+        <a className="btn primary" href={window.location.href} target="_blank" rel="noopener">
+          Open Shor's Reach
+        </a>
+      </main>
+    );
+
   return (
     <>
       <a className="skip" href="#main">
