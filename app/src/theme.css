@@ -1385,3 +1385,34 @@ main > :first-child:not(.home) {
 @media (max-width: 760px) {
   .w-add-row, .w-alerts-form { grid-template-columns: 1fr; }
 }
+
+/* ---------------------------------------------------------------- Embed (widget iframe) */
+html.embed-mode, html.embed-mode body { background: transparent; }
+html.embed-mode body::before, html.embed-mode body::after { display: none; }
+.embed { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 16px; padding: 14px 16px; font-size: 14px; color: var(--text); }
+.embed-head { display: flex; align-items: center; gap: 8px; font-size: 13px; letter-spacing: .01em; }
+.embed-head .brand-mark { width: 22px; height: 22px; font-size: 13px; }
+.embed-form { display: flex; gap: 8px; margin-top: 10px; }
+.embed-form input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text); border-radius: 10px; padding: 9px 12px; font-size: 13px; }
+.embed-form input:focus { outline: none; border-color: var(--accent); }
+.embed-body { margin-top: 10px; }
+.embed-verdict { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.embed-score b { font: 600 26px/1 var(--font-display); margin-right: 3px; }
+.embed-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; }
+.embed-foot a { color: var(--accent); text-decoration: none; }
+.embed-foot a.faint { color: var(--faint); }
+
+/* ---------------------------------------------------------------- Developers */
+.dev-h2 { font: 600 clamp(26px, 3.4vw, 38px)/1.1 var(--font-display); margin: 44px 0 14px; letter-spacing: -0.02em; }
+.dev-choices { margin-top: 8px; }
+.dev-list { padding-left: 18px; margin: 0; display: grid; gap: 4px; font-size: 14px; }
+.dev-code { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-top: 16px; min-width: 0; }
+.dev-code-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.dev-code pre { margin: 0; padding: 14px; font-size: 12.5px; line-height: 1.55; overflow-x: auto; white-space: pre; }
+.dev-out { max-height: 420px; overflow: auto; }
+.dev-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.dev-table th, .dev-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.dev-table th { color: var(--faint); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.dev-widgets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 18px; }
+.compact-pg input { text-align: left; }
+.grid-2 > .dev-code { margin-top: 0; }

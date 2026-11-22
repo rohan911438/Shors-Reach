@@ -12,6 +12,7 @@ const ScanPage = lazy(() => import("./pages/Scan.js").then((m) => ({ default: m.
 const Plan = lazy(() => import("./pages/Plan.js").then((m) => ({ default: m.Plan })));
 const Pass = lazy(() => import("./pages/Pass.js").then((m) => ({ default: m.Pass })));
 const Dashboard = lazy(() => import("./pages/Dashboard.js").then((m) => ({ default: m.Dashboard })));
+const Embed = lazy(() => import("./pages/Embed.js").then((m) => ({ default: m.Embed })));
 const Watch = lazy(() => import("./pages/Watch.js").then((m) => ({ default: m.Watch })));
 const Developers = lazy(() => import("./pages/Developers.js").then((m) => ({ default: m.Developers })));
 const Methodology = lazy(() => import("./pages/Methodology.js").then((m) => ({ default: m.Methodology })));
@@ -36,6 +37,9 @@ const NAV: { label: string; route: Route; match: Route["name"][] }[] = [
 
 function useTheme(): [string, () => void] {
   const [theme, setTheme] = useState<string>(() => {
+    // Embeds pass ?theme=light|dark from the host page.
+    const forced = new URLSearchParams(window.location.search).get("theme");
+    if (forced === "light" || forced === "dark") return forced;
     try {
       return localStorage.getItem("theme") ?? "";
     } catch {
@@ -46,7 +50,7 @@ function useTheme(): [string, () => void] {
     if (theme) document.documentElement.dataset.theme = theme;
     else delete document.documentElement.dataset.theme;
     try {
-      if (theme) localStorage.setItem("theme", theme);
+      if (theme && !new URLSearchParams(window.location.search).has("theme")) localStorage.setItem("theme", theme);
     } catch {
       /* storage unavailable */
     }
@@ -80,6 +84,14 @@ export function App() {
     window.scrollTo({ top: 0 });
   }, [route.name]);
   const dark = theme ? theme === "dark" : typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+  // Embeddable widget (iframe): no site chrome.
+  if (route.name === "embed")
+    return (
+      <Suspense fallback={null}>
+        <Embed input={route.input} />
+      </Suspense>
+    );
 
   return (
     <>

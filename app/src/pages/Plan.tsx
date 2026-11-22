@@ -20,14 +20,16 @@ export function Plan() {
   useEffect(() => {
     if (!summary) return;
     let cancelled = false;
+    const ctrl = new AbortController();
     setState({ kind: "loading" });
     (async () => {
       let advice: AdviceResponse;
       try {
-        const res = await fetch("/api/advise", { method: "POST", headers: { "content-type": "application/json" }, body: key });
+        const res = await fetch("/api/advise", { method: "POST", headers: { "content-type": "application/json" }, body: key, signal: ctrl.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         advice = (await res.json()) as AdviceResponse;
       } catch {
+        if (cancelled) return;
         // Static hosting or advisor down → same deterministic plan, computed locally.
         advice = { plan: fallbackPlan(summary), source: "fallback", fallbackReason: "advisor-unreachable" };
       }
@@ -35,6 +37,7 @@ export function Plan() {
     })();
     return () => {
       cancelled = true;
+      ctrl.abort(); // superseded request (StrictMode, new scan): don't pay for a second model call
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);

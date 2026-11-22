@@ -21,6 +21,9 @@
     },
     "api/alerts.ts": {
       "maxDuration": 300
+    },
+    "api/v1/scan.ts": {
+      "maxDuration": 60
     }
   },
   "headers": [
