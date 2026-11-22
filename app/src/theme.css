@@ -1375,7 +1375,7 @@ main > :first-child:not(.home) {
 .w-change { display: grid; grid-template-columns: 10px 1fr; gap: 10px; font-size: 14px; }
 .w-change .w-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--danger); box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 18%, transparent); }
 .w-change.good .w-dot { background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
-.w-alerts-form { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 12px; align-items: end; }
+.w-alerts-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
 .w-alerts-form label { display: grid; gap: 6px; font-size: 13px; }
 .w-alerts-form fieldset { border: 0; padding: 0; margin: 0; display: flex; gap: 14px; align-items: center; }
 .w-alerts-form legend { font-size: 13px; margin-bottom: 6px; }
@@ -1416,3 +1416,15 @@ html.embed-mode body::before, html.embed-mode body::after { display: none; }
 .dev-widgets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 18px; }
 .compact-pg input { text-align: left; }
 .grid-2 > .dev-code { margin-top: 0; }
+
+/* ---------------------------------------------------------------- Telegram alerts */
+.tg-btn { border-color: color-mix(in srgb, #2aabee 55%, var(--border-strong)); }
+.tg-btn:hover { border-color: #2aabee; }
+.tg-row { flex-wrap: wrap; }
+.tg-state { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 12px; font-size: 14px; }
+.tg-state.pending { background: color-mix(in srgb, #2aabee 10%, transparent); border: 1px solid color-mix(in srgb, #2aabee 40%, transparent); }
+.tg-state.on { background: color-mix(in srgb, var(--accent) 10%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.tg-state.on > span { font-weight: 600; }
+.tg-wait { display: inline-flex; align-items: center; gap: 8px; }
+.tg-steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.tg-steps li::marker { color: var(--accent); font-weight: 700; }
