@@ -82,14 +82,17 @@ export function App() {
       </a>
       <header className={`header ${scrolled ? "scrolled" : ""} ${menu ? "open" : ""}`}>
         <div className="wrap">
-          <a className="brand" href="#/">
-            <img src="/favicon.svg" alt="" />
+          <a className="brand" href="#/" aria-label="Shor's Reach home">
+            <span className="brand-mark">
+              <Icon name="atom" size={16} />
+            </span>
             Shor's Reach
           </a>
           <nav className="nav" aria-label="Main" id="main-nav">
-            {NAV.map((n) => (
+            {NAV.map((n, i) => (
               <a key={n.label} href={href(n.route)} aria-current={n.match.includes(route.name) ? "page" : undefined}>
                 {n.label}
+                <sup>0{i + 1}</sup>
               </a>
             ))}
           </nav>
@@ -97,6 +100,11 @@ export function App() {
           <button className="icon-btn" type="button" onClick={toggleTheme} aria-label={`Switch to ${dark ? "light" : "dark"} theme`} title="Toggle theme">
             <Icon name={dark ? "sun" : "moon"} size={17} />
           </button>
+          {route.name !== "home" && route.name !== "scan" ? null : (
+            <a className="btn small cta-scan" href="#/pass">
+              Get a Quantum Pass
+            </a>
+          )}
           <div className="connect">
             <ConnectButton chainStatus="icon" accountStatus="avatar" showBalance={false} />
           </div>
@@ -113,7 +121,7 @@ export function App() {
         </div>
       </header>
 
-      <main className="wrap" id="main" key={route.name}>
+      <main className={route.name === "home" ? "" : "wrap"} id="main" key={route.name}>
         <Suspense fallback={<PageLoading />}>
           {route.name === "home" && <Home />}
           {route.name === "scan" && <ScanPage input={route.input} />}
@@ -126,10 +134,25 @@ export function App() {
 
       <footer className="footer">
         <div className="wrap">
+          <div className="foot-cta">
+            <h2>
+              Build before <em className="serif lime">Q-Day.</em>
+            </h2>
+            <div className="row">
+              <a className="btn primary" href="#/" onClick={() => setTimeout(() => document.getElementById("scan-input")?.focus(), 50)}>
+                <Icon name="scan" size={16} /> Scan an address
+              </a>
+              <a className="btn" href="#/methodology">
+                Read the methodology <Icon name="arrow" size={16} />
+              </a>
+            </div>
+          </div>
           <div className="foot-grid">
             <div className="foot-brand">
               <a className="brand" href="#/">
-                <img src="/favicon.svg" alt="" />
+                <span className="brand-mark">
+                  <Icon name="atom" size={16} />
+                </span>
                 Shor's Reach
               </a>
               <p className="muted">
@@ -172,9 +195,7 @@ export function App() {
             Shor's Reach
           </div>
           <div className="foot-bottom">
-            <span>
-              Built for <b>#BuildBeforeQDay</b>
-            </span>
+            <span>© 2026 Shor's Reach · MIT · built for #BuildBeforeQDay</span>
             <span>Testnet demo · not financial advice</span>
           </div>
         </div>

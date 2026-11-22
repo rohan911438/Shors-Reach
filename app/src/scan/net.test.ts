@@ -55,3 +55,13 @@ describe("Net", () => {
     expect(peak).toBe(2);
   });
 });
+
+import { looksLikeSeedPhrase } from "../lib/seed.js";
+describe("seed-phrase guard", () => {
+  it("flags 12/24-word mnemonics and nothing else", () => {
+    expect(looksLikeSeedPhrase("abandon ".repeat(11) + "about")).toBe(true);
+    expect(looksLikeSeedPhrase("zoo ".repeat(23) + "wrong")).toBe(true);
+    expect(looksLikeSeedPhrase("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq")).toBe(false);
+    expect(looksLikeSeedPhrase("hello world")).toBe(false);
+  });
+});

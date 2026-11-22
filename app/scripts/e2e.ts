@@ -52,9 +52,9 @@ console.log(`E2E against ${BASE}`);
 await step("landing renders hero, scan box and live pass counter", async () => {
   await page.goto(`${BASE}/#/`);
   await page.getByRole("heading", { level: 1 }).waitFor();
-  expect((await page.getByRole("heading", { level: 1 }).innerText()).includes("Q-Day"), "hero headline");
+  expect((await page.getByRole("heading", { level: 1 }).innerText()).includes("public"), "hero headline");
   await page.locator("#scan-input").waitFor();
-  await page.locator(".live-chip").filter({ hasText: /\d+ passes minted/ }).waitFor({ timeout: 30_000 });
+  await page.locator(".hero-tag").filter({ hasText: /\d+ passes minted/ }).waitFor({ timeout: 30_000 });
 });
 
 await step("input detection + validation", async () => {

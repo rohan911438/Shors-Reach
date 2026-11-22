@@ -1,6 +1,6 @@
 import "@rainbow-me/rainbowkit/styles.css";
 import "./styles.css";
-import "./polish.css";
+import "./theme.css";
 
 import { darkTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -23,7 +23,7 @@ createRoot(container).render(
   <React.StrictMode>
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={darkTheme({ accentColor: "#a78bfa", accentColorForeground: "#07080c", borderRadius: "medium" })}>
+        <RainbowKitProvider theme={darkTheme({ accentColor: "#c8ff3d", accentColorForeground: "#0a0a08", borderRadius: "large", fontStack: "system" })}>
           <ScanProvider>
             <App />
           </ScanProvider>

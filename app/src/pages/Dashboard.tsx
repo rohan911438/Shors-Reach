@@ -60,7 +60,7 @@ export function Dashboard() {
   return (
     <>
       <header className="page-head">
-        <a className="live-chip" href={`https://explore.qore.network/address/${QUANTUM_PASS_ADDRESS}`} target="_blank" rel="noreferrer">
+        <a className="hero-tag" href={`https://explore.qore.network/address/${QUANTUM_PASS_ADDRESS}`} target="_blank" rel="noreferrer">
           <span className="live-dot" /> Read live from QoreChain testnet
         </a>
         <h1>

@@ -133,9 +133,16 @@ export function Pass() {
             ) : (
               <>
                 <p className="muted">QoreX signs QoreChain transactions with your post-quantum key. Your key never leaves the wallet.</p>
-                <button className="btn primary" type="button" disabled={step < 2 || phase.k === "busy"} onClick={connect}>
-                  {installed ? "Connect QoreX" : "Connect QoreX (not detected)"}
-                </button>
+                <div className="row">
+                  <button className="btn primary" type="button" disabled={step < 2 || phase.k === "busy"} onClick={connect}>
+                    {installed ? "Connect QoreX" : "Connect QoreX (not detected)"}
+                  </button>
+                  {!installed && (
+                    <a className="btn" href="https://www.qorechain.io" target="_blank" rel="noreferrer">
+                      Get QoreX →
+                    </a>
+                  )}
+                </div>
               </>
             )}
             {lowBalance && (

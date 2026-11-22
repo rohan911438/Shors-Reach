@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 
 import { navigate } from "../lib/router.js";
+import { looksLikeSeedPhrase } from "../lib/seed.js";
 import { detectInput } from "../scan/index.js";
 
 export const EXAMPLES: { label: string; input: string; hint: string }[] = [
@@ -37,6 +38,11 @@ export function ScanInput({ initial = "", compact = false }: { initial?: string;
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const v = value.trim();
+    if (looksLikeSeedPhrase(v)) {
+      setValue("");
+      setError("That looks like a seed phrase. Never paste it anywhere — not here, not into any website. We only need a public address or key. If you've shared it before, move your funds to a new wallet.");
+      return;
+    }
     try {
       detectInput(v);
       setError(null);
@@ -68,7 +74,7 @@ export function ScanInput({ initial = "", compact = false }: { initial?: string;
         </button>
       </form>
       <div className="faint" style={{ fontSize: 13, marginTop: 8, minHeight: 20, textAlign: compact ? "left" : "center" }}>
-        {kind ? `Detected: ${kind}` : "Public data only. Never paste a seed phrase or private key."}
+        {kind ? `Detected: ${kind}` : looksLikeSeedPhrase(value) ? <b style={{ color: "var(--danger)" }}>⚠ That looks like a seed phrase — delete it. Never paste it into any website.</b> : "Public data only. Never paste a seed phrase or private key."}
       </div>
       {error && (
         <div className="input-error" role="alert">
