@@ -17,6 +17,7 @@ import {
   UpstreamError,
 } from "./server.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
+import { BODY_TOO_LARGE, readCapped } from "../lib/http.js";
 
 export const AskRequestSchema = z
   .object({
@@ -229,7 +230,9 @@ export async function handleAsk(req: Request, env: AdvisorEnv, ip = "unknown"): 
   if (limiter.limited(ip, Date.now(), env.rateLimit ?? 30)) return json(429, { error: "Too many questions — try again in an hour." });
   let raw: unknown;
   try {
-    raw = JSON.parse(await req.text());
+    const text = await readCapped(req, 49_152);
+    if (text === null) return json(413, BODY_TOO_LARGE);
+    raw = JSON.parse(text);
   } catch {
     return json(400, { error: "Send JSON." });
   }

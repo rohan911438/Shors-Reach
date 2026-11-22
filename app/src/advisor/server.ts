@@ -6,6 +6,7 @@
 import { fallbackPlan } from "./fallback.js";
 import { SYSTEM_PROMPT, userMessage } from "./prompt.js";
 import { parseSummary, PLAN_JSON_SCHEMA, PlanSchema, type AdviceResponse, type Plan, type Summary } from "./schema.js";
+import { BODY_TOO_LARGE, readCapped } from "../lib/http.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 import { containsIdentifier } from "../scan/score/summary.js";
 
@@ -179,12 +180,13 @@ const json = (status: number, body: unknown) =>
 export async function handleAdvise(req: Request, env: AdvisorEnv, ip = "unknown"): Promise<Response> {
   if (req.method !== "POST") return json(405, { error: "Use POST." });
   if (rateLimited(ip, env.rateLimit ?? 10)) return json(429, { error: "Too many requests — try again in an hour." });
-  let body: string;
+  let body: string | null;
   try {
-    body = await req.text();
+    body = await readCapped(req, 32_768);
   } catch {
     return json(400, { error: "Unreadable body." });
   }
+  if (body === null) return json(413, BODY_TOO_LARGE);
   const parsed = parseSummary(body);
   if (!parsed.ok) return json(400, { error: parsed.error });
   return json(200, await advise(parsed.summary, env));

@@ -11,6 +11,7 @@ import { deriveUnifiedAccount, EthNativeSigner, getNetwork, openEvmWindowMsg } f
 import { createPublicClient, createWalletClient, defineChain, http, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
+import { readCapped } from "../src/lib/http.js";
 import { createRateLimiter } from "../src/lib/rateLimit.js";
 import { attestFromNativeTx } from "../src/pass/relayer.js";
 import { QUANTUM_PASS_ABI, QUANTUM_PASS_ADDRESS } from "../src/qore/quantumPass.js";
@@ -61,7 +62,9 @@ export async function POST(request: Request): Promise<Response> {
   if (limiter.limited(ip)) return json(429, { error: "Too many requests — try again later.", code: "rate-limited" });
   let txHash = "";
   try {
-    txHash = String(((await request.json()) as { txHash?: unknown }).txHash ?? "");
+    const text = await readCapped(request, 2048);
+    if (text === null) return json(413, { error: "Request body too large.", code: "too-large" });
+    txHash = String((JSON.parse(text) as { txHash?: unknown }).txHash ?? "");
   } catch {
     return json(400, { error: "Body must be JSON { txHash }.", code: "bad-body" });
   }

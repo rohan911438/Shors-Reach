@@ -13,6 +13,7 @@
  *   POST ?action=telegram                    Telegram webhook (/start <token>, /stop)
  *   GET  ?action=cron                        scheduled re-check (Authorization: Bearer CRON_SECRET)
  */
+import { BODY_TOO_LARGE, readCapped } from "../lib/http.js";
 import { createRateLimiter } from "../lib/rateLimit.js";
 import { looksLikeSeedPhrase } from "../lib/seed.js";
 import { detectInput } from "../scan/index.js";
@@ -204,7 +205,8 @@ async function telegramWebhook(d: AlertsDeps, kv: KV, req: Request): Promise<Res
       d.log?.(`telegram send failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
-  const update = (await req.json().catch(() => null)) as { message?: { chat?: { id?: number | string; type?: string }; text?: string } } | null;
+  const raw = await readCapped(req, 65_536).catch(() => null);
+  const update = (raw ? (() => { try { return JSON.parse(raw); } catch { return null; } })() : null) as { message?: { chat?: { id?: number | string; type?: string }; text?: string } } | null;
   const chat = update?.message?.chat;
   const text = update?.message?.text?.trim() ?? "";
   if (chat?.id === undefined) return json(200, { ok: true });
@@ -311,8 +313,15 @@ export async function runCron(d: AlertsDeps, kv: KV): Promise<{ checked: number;
       await saveSub(kv, sub);
       checked++;
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // The user blocked the bot or deleted the chat: Telegram answers 403 forever, so drop the subscription.
+      if (sub.channel === "telegram" && /telegram failed: 403/.test(msg)) {
+        await deleteSub(kv, sub);
+        log(`alerts cron: ${sub.id} removed (bot blocked)`);
+        continue;
+      }
       errors++;
-      log(`alerts cron: ${sub.id} failed: ${err instanceof Error ? err.message : String(err)}`);
+      log(`alerts cron: ${sub.id} failed: ${msg}`);
     }
   }
   return { checked, alerted, errors };
@@ -337,7 +346,14 @@ export async function handleAlerts(req: Request, d: AlertsDeps, ip = "unknown"):
     return json(200, await runCron(d, kv));
   }
   if (req.method === "POST") {
-    const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+    const text = await readCapped(req, 8192).catch(() => null);
+    if (text === null) return json(413, BODY_TOO_LARGE);
+    let body: Record<string, unknown> | null = null;
+    try {
+      body = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      body = null;
+    }
     const str = (v: unknown) => (typeof v === "string" ? v : "");
     if (body?.action === "subscribe") {
       if (subscribeLimiter.limited(ip)) return json(429, { error: "Too many requests — try again in an hour.", code: "rate-limit" });
