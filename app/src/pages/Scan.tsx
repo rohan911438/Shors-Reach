@@ -5,6 +5,7 @@ import { ShareCard } from "../components/ShareCard.js";
 import { amount, CHAIN_LABEL, FORMAT_LABEL, short, STATUS_COLOR, STATUS_LABEL, uqorToQor, usd } from "../lib/format.js";
 import { href } from "../lib/router.js";
 import { useScan } from "../lib/scanStore.js";
+import { WatchButton } from "../components/WatchButton.js";
 import { REASONS, STATUSES, type Holding, type Questionnaire, type ScanResult, type Status } from "../scan/index.js";
 
 export function ScanPage({ input }: { input: string }) {
@@ -130,6 +131,7 @@ function Results({ result }: { result: ScanResult }) {
                   Get my plan
                 </a>
               )}
+              <WatchButton result={result} disabled={incomplete} />
               <a className="btn" href={href({ name: "pass" })}>
                 Protect on QoreChain
               </a>

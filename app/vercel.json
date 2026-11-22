@@ -18,6 +18,9 @@
     },
     "api/ask.ts": {
       "maxDuration": 60
+    },
+    "api/alerts.ts": {
+      "maxDuration": 300
     }
   },
   "headers": [
@@ -37,6 +40,12 @@
           "value": "camera=(), microphone=(), geolocation=()"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/alerts?action=cron",
+      "schedule": "0 8 * * *"
     }
   ]
 }
