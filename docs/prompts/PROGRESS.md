@@ -30,3 +30,11 @@ Legend: ⬜ not started · 🟨 in progress · 🟥 gate failed · ✅ done
 - ✅ Deployed to Vercel: https://shors-reach.vercel.app (frontend + /api/advise + /api/attest). Env: GEMINI_API_KEYS, ADVISOR_MODEL, QORE_ATTESTER_MNEMONIC (Production + Preview). Render not needed — both APIs run as Vercel functions.
 - ✅ Fixes surfaced by testing: BTC scan degrades gracefully; mempool.space → blockstream.info failover; /api/attest bundled (ERR_REQUIRE_ESM in @cosmjs); wallet stack lazy-loaded.
 - ⏳ User-only: real QoreX run on /pass, demo video, submission page, rotate the API keys shared in chat after the hackathon.
+
+## 22 Nov 2026 — branch feat/api-watchlist-qa (merged)
+
+- ✅ Plan follow-up Q&A (/api/ask) — anonymised summary only, input + output guards, rule-based fallback.
+- ✅ Watchlist (on-device) + opt-in email/Telegram alerts (/api/alerts, daily cron). Alerts stay "not switched on" until storage + a channel are configured (user step).
+- ✅ Public Scan API v1 (/api/v1/scan) + embeddable widget (public/widget.js) + #/developers.
+- ✅ 172 unit tests; workflows 34/34 on dev; preview smoke via vercel curl (all endpoints).
+- ⏳ User: provision Upstash Redis + Resend or a Telegram bot to switch alerts on.
