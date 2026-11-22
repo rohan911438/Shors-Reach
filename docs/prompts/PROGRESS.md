@@ -38,3 +38,10 @@ Legend: ⬜ not started · 🟨 in progress · 🟥 gate failed · ✅ done
 - ✅ Public Scan API v1 (/api/v1/scan) + embeddable widget (public/widget.js) + #/developers.
 - ✅ 172 unit tests; workflows 34/34 on dev; preview smoke via vercel curl (all endpoints).
 - ⏳ User: provision Upstash Redis + Resend or a Telegram bot to switch alerts on.
+
+## 22 Nov 2026 — Telegram alerts live
+
+- ✅ @ShorsReachBot: profile, commands, avatar set via Bot API; webhook → /api/alerts?action=telegram (secret-checked); daily cron authorised by CRON_SECRET.
+- ✅ Storage: Upstash Redis (upstash-kv-sky-xylophone) connected to Production + Preview.
+- ✅ Workflows 35/35 on production incl. the Telegram journey (Start simulated via the webhook).
+- ⏳ User: real end-to-end try from a phone; rotate the bot token (/revoke) and the Upstash token (both were pasted in chat).

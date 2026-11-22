@@ -26,7 +26,7 @@ Entry for the **QoreChain Developer Fest — "Build Before Q-Day"** · Track: **
 5. **Quantum Pass** — a soulbound pass minted only for accounts protected by a registered ML-DSA-87 key, bound on-chain to that key.
 6. **Public counter + share card** — passes, attested exposure buckets, chains; a 1200×675 card with no addresses.
 7. **Ask about your plan** — follow-up Q&A ("why is my Taproot address red?", "what do I do with a Ledger?") on the same anonymised summary; questions containing addresses or seed phrases are refused before any model call; rule-based answers if the model is down.
-8. **Watchlist** — save addresses on your device; every visit re-scans and flags a key revealed by a spend, new funds on an exposed key, a rising score, or funds moved to safety. Optional **email / Telegram alerts** (double opt-in, daily, deleted on unsubscribe).
+8. **Watchlist** — save addresses on your device; every visit re-scans and flags a key revealed by a spend, new funds on an exposed key, a rising score, or funds moved to safety. **Telegram alerts** via [@ShorsReachBot](https://t.me/ShorsReachBot): tap 🔔 on a watched address, press Start, done — daily checks, `/list`, `/stop` deletes everything (email channel supported in code, not enabled).
 9. **Scan API + embeddable widget** — `POST /api/v1/scan` for wallets, exchanges and custodians, and a two-line `<script>` widget that scans in the visitor's browser. Docs and live playground: [#/developers](https://shors-reach.vercel.app/#/developers).
 
 ## Quantum Pass requirements → proof
