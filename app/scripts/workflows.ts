@@ -13,7 +13,7 @@
  *  E. Returning visitor — theme choice persists across reloads; deep link to a scan restores results
  * Records timings per step and writes a Markdown report.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 import { chromium, type Browser, type Page } from "playwright-core";
@@ -24,6 +24,10 @@ const reportPath = args.includes("--report") ? args[args.indexOf("--report") + 1
 const GENESIS =
   "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f";
 const VITALIK = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+// Lets the Telegram journey play the bot's side (POST the Start update to the webhook). Read from app/.env, never printed.
+const TG_SECRET = existsSync(new URL("../.env", import.meta.url))
+  ? (/^TELEGRAM_WEBHOOK_SECRET=(.+)$/m.exec(readFileSync(new URL("../.env", import.meta.url), "utf8"))?.[1]?.trim() ?? "")
+  : "";
 const TAPROOT = "bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297";
 const XPUB = "zpub6rFR7y4Q2AijBEqTUquhVz398htDFrtymD9xYYfG1m4wAcvPhXNfE3EfH1r1ADqtfSdVCToUG868RvUUkgDKf31mGDtKsAYz2oz2AGutZYs";
 
@@ -322,7 +326,7 @@ console.log(persona);
     await p.goto(`${BASE}/#/scan/${TAPROOT}`);
     await waitResults(p);
     await p.getByRole("button", { name: "+ Watch" }).click();
-    await p.getByRole("link", { name: "✓ Watching" }).waitFor();
+    await p.getByRole("link", { name: /✓ Watching/ }).waitFor();
   });
   await step("the watchlist shows it with a score, and survives a reload", async () => {
     await p.goto(`${BASE}/#/watch`);
@@ -360,15 +364,40 @@ console.log(persona);
   });
   await step("the alerts section is honest about what's enabled", async () => {
     const box = p.locator(".w-alerts");
-    await box.locator(".notice, form").first().waitFor({ timeout: 30_000 });
+    await box.locator(".notice, .tg-steps, form").first().waitFor({ timeout: 30_000 });
+    if (await box.locator(".tg-steps").count()) return "Telegram enabled: 3-step guide shown";
     if (await box.locator("form").count()) {
       await box.locator('input[type="email"]').fill("watch-test@example.com");
       await box.getByRole("button", { name: /confirmation email/ }).click();
       await box.getByText("Check your inbox to confirm.").waitFor({ timeout: 30_000 });
-      return "enabled: confirmation email requested";
+      return "email enabled: confirmation email requested";
     }
     expect(/switched on/.test(await box.locator(".notice").innerText()), "no disabled notice");
     return "disabled on this deployment (notice shown)";
+  });
+  await step("Telegram onboarding: tap 🔔 → Telegram opens → Start → card turns green → turn off", async () => {
+    const card = p.locator(".w-item").first();
+    if (!(await card.getByRole("button", { name: /Telegram alerts/ }).count())) return "skipped (Telegram not enabled here)";
+    const [popup] = await Promise.all([p.waitForEvent("popup", { timeout: 30_000 }), card.getByRole("button", { name: /Telegram alerts/ }).click()]);
+    await popup.waitForURL(/t\.me\/\w+\?start=[0-9a-f]{24}/, { timeout: 30_000 }).catch(() => {});
+    const opened = popup.url();
+    await popup.close();
+    await card.getByText("Waiting for you to press").waitFor({ timeout: 30_000 });
+    const link = (await card.getByRole("link", { name: "Open Telegram" }).getAttribute("href")) ?? "";
+    expect(/^https:\/\/t\.me\/\w+\?start=[0-9a-f]{24}$/.test(link), `bad link ${link}`);
+    if (!TG_SECRET) return `popup → ${opened} (no webhook secret locally: Start not simulated)`;
+    // Play Telegram's part: the user pressed Start (fake chat id → the bot's reply fails quietly, by design).
+    const token = link.split("start=")[1];
+    const hook = await fetch(`${BASE}/api/alerts?action=telegram`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-telegram-bot-api-secret-token": TG_SECRET },
+      body: JSON.stringify({ update_id: 1, message: { chat: { id: 1, type: "private" }, text: `/start ${token}` } }),
+    });
+    expect(hook.status === 200, `webhook ${hook.status}`);
+    await card.getByText("✓ Telegram alerts on").waitFor({ timeout: 30_000 });
+    await card.getByRole("button", { name: "Turn off" }).click();
+    await card.getByRole("button", { name: /Telegram alerts/ }).waitFor();
+    return `popup → ${opened.replace(/start=\w+/, "start=…")} · connected · turned off`;
   });
   await step("removes the entry", async () => {
     await p.locator(".w-item").first().getByRole("button", { name: "Remove" }).click();

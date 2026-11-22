@@ -24,6 +24,8 @@ export interface WatchItem {
   unread: number;
   checking?: boolean;
   error?: string;
+  /** Opt-in server alert linked to this entry (ids to poll / unsubscribe). */
+  alert?: { channel: "telegram" | "email"; id: string; t: string; link?: string; status: "pending" | "active"; since: string };
 }
 
 // ---------------------------------------------------------------- persistence (never throws)
@@ -97,7 +99,14 @@ export function addToWatchlist(input: string, label?: string, seed?: ScanResult)
 }
 
 export function removeFromWatchlist(id: string) {
+  const item = items.find((i) => i.id === id);
+  // Best effort: removing an entry also deletes its server-side alert.
+  if (item?.alert && typeof fetch !== "undefined")
+    void fetch("/api/alerts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "unsubscribe", id: item.alert.id, t: item.alert.t }) }).catch(() => {});
   set(items.filter((i) => i.id !== id));
+}
+export function setAlert(id: string, alert: WatchItem["alert"]) {
+  patch(id, { alert });
 }
 export function renameWatch(id: string, label: string) {
   patch(id, { label: label.trim() || defaultLabel(items.find((i) => i.id === id)?.input ?? "") });

@@ -11,8 +11,8 @@ export function WatchButton({ result, disabled }: { result: ScanResult; disabled
   const watched = list.some((i) => i.input === result.input.trim());
   if (watched)
     return (
-      <a className="btn" href={href({ name: "watch" })} title="Saved on this device">
-        ✓ Watching
+      <a className="btn" href={href({ name: "watch" })} title="Saved on this device — open the watchlist to turn on Telegram alerts">
+        ✓ Watching · 🔔 alerts
       </a>
     );
   return (

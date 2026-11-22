@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { AlertsOptIn } from "../components/AlertsOptIn.js";
+import { TelegramAlert, useAlertsStatus } from "../components/TelegramAlert.js";
 import { usd } from "../lib/format.js";
 import { href } from "../lib/router.js";
 import { looksLikeSeedPhrase } from "../lib/seed.js";
@@ -40,7 +41,7 @@ function ChangeRow({ c }: { c: Change }) {
   );
 }
 
-function Item({ item }: { item: WatchItem }) {
+function Item({ item, telegram }: { item: WatchItem; telegram: boolean }) {
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(item.label);
   const snap = item.snapshot;
@@ -108,6 +109,12 @@ function Item({ item }: { item: WatchItem }) {
         </p>
       )}
 
+      {telegram && (
+        <div className="row tg-row" style={{ gap: 8, marginTop: 14 }}>
+          <TelegramAlert item={item} />
+        </div>
+      )}
+
       <div className="row" style={{ gap: 8, marginTop: 14 }}>
         <button className="btn small" type="button" disabled={item.checking} onClick={() => void checkItem(item.id, browserScanner)}>
           Check now
@@ -131,6 +138,7 @@ function Item({ item }: { item: WatchItem }) {
 
 export function Watch() {
   const list = useWatchlist();
+  const alerts = useAlertsStatus();
   const [value, setValue] = useState("");
   const [label, setLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -232,12 +240,12 @@ export function Watch() {
       ) : (
         <div className="w-grid">
           {list.map((i) => (
-            <Item key={i.id} item={i} />
+            <Item key={i.id} item={i} telegram={!!alerts?.telegram} />
           ))}
         </div>
       )}
 
-      <AlertsOptIn items={list} />
+      <AlertsOptIn items={list} status={alerts} />
     </>
   );
 }

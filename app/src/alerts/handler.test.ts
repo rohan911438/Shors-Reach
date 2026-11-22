@@ -24,12 +24,12 @@ function result(status: "EXPOSED_NOW" | "EXPOSED_ON_SPEND"): ScanResult {
 function setup(over: Partial<AlertsDeps> = {}) {
   const kv = memoryKV();
   const mail: { to: string; subject: string; text: string }[] = [];
-  const tg: { chat: string; text: string }[] = [];
+  const tg: { chat: string; text: string; buttons?: { text: string; url: string }[] }[] = [];
   let status: "EXPOSED_NOW" | "EXPOSED_ON_SPEND" = "EXPOSED_ON_SPEND";
   const deps: AlertsDeps = {
     kv,
     mailer: { send: async (to, subject, text) => void mail.push({ to, subject, text }) },
-    telegram: { username: "shors_bot", send: async (chat, text) => void tg.push({ chat, text }) },
+    telegram: { username: "shors_bot", send: async (chat, text, buttons) => void tg.push({ chat, text, buttons }) },
     scanner: async () => result(status),
     origin: ORIGIN,
     cronSecret: "cron-secret",
@@ -119,28 +119,79 @@ describe("alerts — email flow (double opt-in)", () => {
 });
 
 describe("alerts — telegram flow", () => {
-  const hook = (text: string, secret = "tg-secret", chat = 42) =>
-    post({ message: { chat: { id: chat }, text } }, "/api/alerts?action=telegram", { "x-telegram-bot-api-secret-token": secret });
+  const hook = (text: string, secret = "tg-secret", chat = 42, type = "private") =>
+    post({ message: { chat: { id: chat, type }, text } }, "/api/alerts?action=telegram", { "x-telegram-bot-api-secret-token": secret });
+  const subscribeTg = async (deps: AlertsDeps, label = "Hot") => {
+    const r = await (await handleAlerts(post({ action: "subscribe", input: ADDR, channel: "telegram", label }), deps)).json();
+    return { ...r, token: /start=([0-9a-f]+)/.exec(r.link)![1]! } as { id: string; t: string; link: string; token: string };
+  };
 
-  it("deep link → /start activates → /stop deletes", async () => {
+  it("deep link → Start connects, sends the current status with buttons → /list → /stop deletes", async () => {
     const { deps, tg, kv } = setup();
-    const r = await (await handleAlerts(post({ action: "subscribe", input: ADDR, channel: "telegram", label: "Hot" }), deps)).json();
-    const token = /start=([0-9a-f]+)/.exec(r.link)![1]!;
-    expect(r.link).toBe(`https://t.me/shors_bot?start=${token}`);
+    const r = await subscribeTg(deps);
+    expect(r.link).toBe(`https://t.me/shors_bot?start=${r.token}`);
+    expect(r.t).toBe(r.token);
 
-    expect((await handleAlerts(hook(`/start ${token}`, "wrong"), deps)).status).toBe(401);
-    await handleAlerts(hook(`/start ${token}`), deps);
-    expect(tg.at(-1)!.text).toMatch(/Watching "Hot"/);
+    // The app polls until the user pressed Start.
+    const check = async () => (await (await handleAlerts(post({ action: "check", id: r.id, t: r.t }), deps)).json()).status;
+    expect(await check()).toBe("pending");
+
+    expect((await handleAlerts(hook(`/start ${r.token}`, "wrong"), deps)).status).toBe(401);
+    await handleAlerts(hook(`/start ${r.token}`), deps);
+    expect(tg.at(-2)!.text).toMatch(/Connected! I'm now watching “Hot”/);
+    expect(tg.at(-1)!.text).toMatch(/Right now: exposure score 0\/100 — nothing exposed/);
+    expect(tg.at(-1)!.buttons?.[0]?.url).toBe(`${ORIGIN}/#/scan/${ADDR}`);
+    expect(await check()).toBe("active");
     const subs = [...kv.dump().entries()].filter(([k]) => k.startsWith("alerts:sub:")).map(([, v]) => v as Sub);
     expect(subs[0]).toMatchObject({ status: "active", target: "42" });
+    expect(subs[0]!.snapshot).toBeDefined(); // baseline taken immediately
 
-    // The link is single-use.
-    await handleAlerts(hook(`/start ${token}`, "tg-secret", 77), deps);
-    expect(tg.at(-1)).toMatchObject({ chat: "77", text: expect.stringMatching(/expired/) });
+    // Pressing Start again is harmless; another chat can't reuse the link.
+    await handleAlerts(hook(`/start ${r.token}`), deps);
+    expect(tg.at(-1)!.text).toMatch(/already connected/);
+    await handleAlerts(hook(`/start ${r.token}`, "tg-secret", 77), deps);
+    expect(tg.at(-1)).toMatchObject({ chat: "77", text: expect.stringMatching(/expired or was already used/) });
+
+    await handleAlerts(hook("/list"), deps);
+    expect(tg.at(-1)!.text).toMatch(/watching 1 of 5:\n1\. Hot — score 0\/100/);
 
     await handleAlerts(hook("/stop"), deps);
-    expect(tg.at(-1)!.text).toMatch(/1 alert/);
+    expect(tg.at(-1)!.text).toMatch(/unsubscribed from 1 alert and deleted/);
     expect([...kv.dump().keys()].filter((k) => k.startsWith("alerts:sub:"))).toEqual([]);
+    expect(await check()).toBe("gone");
+  });
+
+  it("plain /start (found the bot directly) gets a welcome with a watchlist button", async () => {
+    const { deps, tg } = setup();
+    await handleAlerts(hook("/start"), deps);
+    expect(tg.at(-1)!.text).toMatch(/Welcome to Shor's Reach Alerts[\s\S]*Tap 🔔 Telegram alerts/);
+    expect(tg.at(-1)!.buttons?.[0]).toEqual({ text: "Open my watchlist", url: `${ORIGIN}/#/watch` });
+  });
+
+  it("unknown text → help; group chats are declined; an unknown token → expired", async () => {
+    const { deps, tg } = setup();
+    await handleAlerts(hook("hello?"), deps);
+    expect(tg.at(-1)!.text).toMatch(/\/list[\s\S]*\/stop/);
+    await handleAlerts(hook("/start", "tg-secret", -100, "group"), deps);
+    expect(tg.at(-1)!.text).toMatch(/only work in private chats/);
+    await handleAlerts(hook(`/start ${"a".repeat(24)}`), deps);
+    expect(tg.at(-1)!.text).toMatch(/expired/);
+  });
+
+  it("a failing Telegram send (user blocked the bot) still returns 200 and keeps the sub", async () => {
+    const { deps, kv } = setup();
+    const r = await subscribeTg(deps);
+    const broken = { ...deps, telegram: { username: "shors_bot", send: async () => Promise.reject(new Error("Forbidden: bot was blocked by the user")) } };
+    expect((await handleAlerts(hook(`/start ${r.token}`), broken)).status).toBe(200);
+    const subs = [...kv.dump().entries()].filter(([k]) => k.startsWith("alerts:sub:")).map(([, v]) => v as Sub);
+    expect(subs[0]!.status).toBe("active");
+  });
+
+  it("if the first reading fails, the user is told and the sub stays active", async () => {
+    const { deps, tg } = setup({ scanner: async () => Promise.reject(new Error("down")) });
+    const r = await subscribeTg(deps);
+    await handleAlerts(hook(`/start ${r.token}`), deps);
+    expect(tg.at(-1)!.text).toMatch(/couldn't reach the chain data/);
   });
 });
 

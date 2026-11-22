@@ -150,7 +150,7 @@ async function subscribe(d: AlertsDeps, kv: KV, body: Record<string, unknown>): 
     const sub: Sub = { id: rand(8), token: rand(12), input, label, channel: "telegram", target: null, status: "pending", createdAt: now };
     await saveSub(kv, sub);
     await kv.set(tgLinkKey(sub.token), sub.id, PENDING_TTL);
-    return json(200, { ok: true, status: "pending", link: `https://t.me/${d.telegram.username}?start=${sub.token}`, message: "Open Telegram and press Start to confirm." });
+    return json(200, { ok: true, status: "pending", id: sub.id, t: sub.token, link: `https://t.me/${d.telegram.username}?start=${sub.token}`, message: "Open Telegram and press Start." });
   }
 
   return json(400, { error: "channel must be email or telegram.", code: "bad-channel" });
@@ -173,47 +173,114 @@ async function unsubscribe(kv: KV, id: string, t: string): Promise<Response> {
   return json(200, { ok: true, status: "deleted" });
 }
 
+// ---------------------------------------------------------------- Telegram onboarding copy
+const fmtUsd = (n: number) => (n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${(n / 1e3).toFixed(1)}K` : `$${Math.round(n)}`);
+
+export const TG = {
+  welcome:
+    "👋 Welcome to Shor's Reach Alerts.\n\nI message you when an address you watch becomes exposed to a future quantum computer — for example when a spend reveals its public key.\n\nTo start (takes 10 seconds):\n1. Open your watchlist\n2. Tap 🔔 Telegram alerts next to an address\n3. Come back here and press Start\n\nI never ask for seed phrases or private keys — never send them to anyone.",
+  expired: "This link has expired or was already used. Open your watchlist and tap 🔔 Telegram alerts again — it only takes a second.",
+  help: "Commands:\n/list — what I'm watching for you\n/stop — unsubscribe and delete all your alert data\n\nTo add an address, open your watchlist and tap 🔔 Telegram alerts next to it.",
+  groupsOnly: "I only work in private chats. Open @{bot} directly to set up alerts.",
+};
+
+function statusLine(snap: Snapshot): string {
+  const exposed = snap.holdings.filter((h) => h.status === "EXPOSED_NOW" && h.amountBase !== "0").length;
+  if (snap.exposedUsd > 0 || exposed > 0)
+    return `Right now: exposure score ${snap.score}/100 — ${fmtUsd(snap.exposedUsd)} sits behind ${exposed} public key${exposed === 1 ? "" : "s"} today.`;
+  if (snap.partial) return "Right now: some data sources didn't answer, so I'll take the baseline on the next daily check.";
+  return `Right now: exposure score ${snap.score}/100 — nothing exposed at rest. 👍`;
+}
+
 async function telegramWebhook(d: AlertsDeps, kv: KV, req: Request): Promise<Response> {
   if (!d.telegram || !d.telegramSecret || !same(req.headers.get("x-telegram-bot-api-secret-token") ?? "", d.telegramSecret))
     return json(401, { error: "unauthorized" });
-  const update = (await req.json().catch(() => null)) as { message?: { chat?: { id?: number | string }; text?: string } } | null;
-  const chat = update?.message?.chat?.id;
+  const tg = d.telegram;
+  // Never fail the webhook because a send failed (user blocked the bot, etc.): Telegram would retry forever.
+  const safeSend = async (chatId: string, msg: string, buttons?: { text: string; url: string }[]) => {
+    try {
+      await tg.send(chatId, msg, buttons);
+    } catch (err) {
+      d.log?.(`telegram send failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  const update = (await req.json().catch(() => null)) as { message?: { chat?: { id?: number | string; type?: string }; text?: string } } | null;
+  const chat = update?.message?.chat;
   const text = update?.message?.text?.trim() ?? "";
-  if (chat === undefined) return json(200, { ok: true });
-  const chatId = String(chat);
+  if (chat?.id === undefined) return json(200, { ok: true });
+  const chatId = String(chat.id);
+  const watchBtn = { text: "Open my watchlist", url: `${d.origin}/#/watch` };
+  const reply = async (msg: string, buttons?: { text: string; url: string }[]) => {
+    await safeSend(chatId, msg, buttons);
+    return json(200, { ok: true });
+  };
 
-  const start = /^\/start\s+([0-9a-f]{24})$/.exec(text);
-  if (start) {
-    const id = await kv.get<string>(tgLinkKey(start[1]!));
+  if (chat.type && chat.type !== "private") return reply(TG.groupsOnly.replace("{bot}", tg.username));
+
+  const cmd = /^\/(\w+)(?:@\w+)?(?:\s+(\S+))?/.exec(text);
+  const name = cmd?.[1]?.toLowerCase() ?? "";
+  const arg = cmd?.[2] ?? "";
+
+  if (name === "start" && /^[0-9a-f]{24}$/.test(arg)) {
+    const id = await kv.get<string>(tgLinkKey(arg));
     const sub = id ? await kv.get<Sub>(subKey(id)) : null;
-    if (!sub) {
-      await d.telegram.send(chatId, "That link has expired. Start again from the Shor's Reach watchlist.");
-      return json(200, { ok: true });
+    if (!sub) return reply(TG.expired, [watchBtn]);
+    if (sub.status === "active") {
+      if (sub.target === chatId) return reply(`✅ You're already connected — I'm watching “${sub.label}”.`, [watchBtn]);
+      return reply(TG.expired, [watchBtn]);
     }
-    if ((await countLive(kv, targetKey("telegram", chatId))) >= MAX_PER_TARGET) {
-      await d.telegram.send(chatId, `You already have ${MAX_PER_TARGET} alerts. Send /stop to remove them first.`);
-      return json(200, { ok: true });
-    }
+    if ((await countLive(kv, targetKey("telegram", chatId))) >= MAX_PER_TARGET)
+      return reply(`You already have ${MAX_PER_TARGET} alerts — the maximum. Send /list to see them or /stop to clear them.`);
     sub.target = chatId;
     sub.status = "active";
     await saveSub(kv, sub);
     await kv.sadd(targetKey("telegram", chatId), sub.id);
-    await kv.del(tgLinkKey(sub.token));
-    await d.telegram.send(chatId, `✓ Watching "${sub.label}". You'll get a message here when its quantum exposure changes. Send /stop to unsubscribe from all alerts.`);
-    return json(200, { ok: true });
+    await safeSend(
+      chatId,
+      `✅ Connected! I'm now watching “${sub.label}”.\n\nI'll message you here if:\n• a transaction reveals one of its public keys\n• new funds land on a key that's already public\n• its exposure score rises\n• exposed funds move to safety (good news)\n\nChecking it now…`,
+    );
+    // Baseline right away, so the user sees where they stand and the first daily check can diff against it.
+    try {
+      const snap = snapshotOf(await d.scanner(sub.input));
+      if (!snap.partial) sub.snapshot = snap;
+      sub.lastCheckedAt = new Date(d.now?.() ?? Date.now()).toISOString();
+      await saveSub(kv, sub);
+      return reply(`${statusLine(snap)}\n\nI check once a day. /list shows what I watch · /stop unsubscribes.`, [
+        { text: "Full report & plan", url: `${d.origin}/#/scan/${encodeURIComponent(sub.input)}` },
+      ]);
+    } catch {
+      return reply("I couldn't reach the chain data just now — I'll take the first reading on the next daily check. /list shows what I watch.");
+    }
   }
-  if (/^\/stop\b/.test(text)) {
+
+  if (name === "start") return reply(TG.welcome, [watchBtn]);
+
+  if (name === "list") {
+    const subs: Sub[] = [];
+    for (const id of await kv.smembers(targetKey("telegram", chatId))) {
+      const s = await kv.get<Sub>(subKey(id));
+      if (s?.status === "active") subs.push(s);
+    }
+    if (!subs.length) return reply("I'm not watching anything for you yet.", [watchBtn]);
+    const lines = subs.map((s, i) => `${i + 1}. ${s.label}${s.snapshot ? ` — score ${s.snapshot.score}/100` : ""}`);
+    return reply(`I'm watching ${subs.length} of ${MAX_PER_TARGET}:\n${lines.join("\n")}\n\n/stop removes all of them.`, [watchBtn]);
+  }
+
+  if (name === "stop") {
     const ids = await kv.smembers(targetKey("telegram", chatId));
     for (const id of ids) {
       const sub = await kv.get<Sub>(subKey(id));
       if (sub) await deleteSub(kv, sub);
     }
     await kv.del(targetKey("telegram", chatId));
-    await d.telegram.send(chatId, `Unsubscribed — ${ids.length} alert(s) and their data deleted.`);
-    return json(200, { ok: true });
+    return reply(
+      ids.length
+        ? `Done — unsubscribed from ${ids.length} alert${ids.length === 1 ? "" : "s"} and deleted the data. You can turn alerts back on any time from your watchlist.`
+        : "You had no alerts. Nothing to delete.",
+    );
   }
-  await d.telegram.send(chatId, "Shor's Reach alerts. Add an address on the watchlist page to get started. /stop removes all alerts.");
-  return json(200, { ok: true });
+
+  return reply(TG.help, [watchBtn]);
 }
 
 export async function runCron(d: AlertsDeps, kv: KV): Promise<{ checked: number; alerted: number; errors: number }> {
@@ -277,6 +344,10 @@ export async function handleAlerts(req: Request, d: AlertsDeps, ip = "unknown"):
       return subscribe(d, kv, body);
     }
     if (body?.action === "confirm") return confirm(kv, str(body.id), str(body.t));
+    if (body?.action === "check") {
+      const sub = await kv.get<Sub>(subKey(str(body.id)));
+      return json(200, { status: sub && same(sub.token, str(body.t)) ? sub.status : "gone" });
+    }
     if (body?.action === "unsubscribe") return unsubscribe(kv, str(body.id), str(body.t));
     return json(400, { error: "Unknown action." });
   }
