@@ -1,46 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { fallbackPlan } from "./fallback.js";
-import { PlanSchema, parseSummary, type Summary } from "./schema.js";
-import { advise, handleAdvise, resetRateLimit, type MessagesClient } from "./server.js";
-
-const zero = { EXPOSED_NOW: 0, EXPOSED_ON_SPEND: 0, PROTECTED: 0, UNKNOWN: 0 };
-
-export const SUMMARIES: Record<string, Summary> = {
-  satoshiEra: {
-    score: 100,
-    scoreBasis: "usd",
-    totalsUsdRounded: { ...zero, EXPOSED_NOW: 6_500_000 },
-    holdings: [
-      { chain: "bitcoin", format: "p2pk", status: "EXPOSED_NOW", reason: "btc-p2pk-output", usdRounded: 5_000_000 },
-      { chain: "bitcoin", format: "p2pkh", status: "EXPOSED_NOW", reason: "btc-sibling-key-revealed", usdRounded: 1_500_000 },
-    ],
-    questionnaire: { signedMessages: "unsure", custodial: false },
-    qorechain: null,
-  },
-  evmActive: {
-    score: 70,
-    scoreBasis: "usd",
-    totalsUsdRounded: { ...zero, EXPOSED_NOW: 21_000, UNKNOWN: 9_000 },
-    holdings: [
-      { chain: "ethereum", format: "eoa", status: "EXPOSED_NOW", reason: "evm-nonce-nonzero", usdRounded: 21_000 },
-      { chain: "base", format: "eoa", status: "UNKNOWN", reason: "evm-offchain-signature-possible", usdRounded: 9_000 },
-    ],
-    questionnaire: { signedMessages: "unsure", custodial: false },
-    qorechain: { pqKeyRegistered: false, windowLive: false },
-  },
-  careful: {
-    score: 0,
-    scoreBasis: "usd",
-    totalsUsdRounded: { ...zero, EXPOSED_ON_SPEND: 3_000, PROTECTED: 70 },
-    holdings: [
-      { chain: "bitcoin", format: "p2wpkh", status: "EXPOSED_ON_SPEND", reason: "btc-hash-hidden", usdRounded: 3_000 },
-      { chain: "qorechain", format: "qore-native", status: "PROTECTED", reason: "qore-native-pq-required", usdRounded: 70 },
-    ],
-    questionnaire: { signedMessages: "no", custodial: false },
-    qorechain: { pqKeyRegistered: true, windowLive: false },
-  },
-};
+import { SUMMARIES } from "./fixtures.js";
+import { PlanSchema, parseSummary } from "./schema.js";
+import { advise, handleAdvise, resetRateLimit, asksForSecrets, type GenerateClient, parseKeys, UpstreamError } from "./server.js";
 
 const GOOD_PLAN = {
   summary: "Most of the value is behind keys already on-chain. Moving it is straightforward.",
@@ -53,24 +16,13 @@ const GOOD_PLAN = {
   qorechainNote: "QoreChain requires hybrid signatures for native transactions.",
 };
 
-function fakeClient(texts: string[], stop = "end_turn"): MessagesClient & { calls: number } {
+function fakeClient(texts: string[], finish = "STOP"): GenerateClient & { calls: number } {
   const c = {
     calls: 0,
-    messages: {
-      create: async () => {
-        const text = texts[Math.min(c.calls, texts.length - 1)]!;
-        c.calls++;
-        return {
-          id: "msg_test",
-          type: "message",
-          role: "assistant",
-          model: "claude-opus-5-5",
-          content: [{ type: "text", text, citations: null }],
-          stop_reason: stop,
-          stop_sequence: null,
-          usage: { input_tokens: 10, output_tokens: 10 },
-        } as never;
-      },
+    generate: async () => {
+      const text = texts[Math.min(c.calls, texts.length - 1)]!;
+      c.calls++;
+      return { text, finishReason: finish, usage: { in: 10, out: 10 } };
     },
   };
   return c;
@@ -148,10 +100,40 @@ describe("advise() with a mocked API", () => {
   });
 
   it("does not retry a refusal", async () => {
-    const c = fakeClient(["{}"], "refusal");
+    const c = fakeClient(["{}"], "SAFETY");
     const r = await advise(SUMMARIES.satoshiEra!, { client: c });
     expect(r.fallbackReason).toBe("refusal");
     expect(c.calls).toBe(1);
+  });
+
+  it("does not retry an auth failure", async () => {
+    let calls = 0;
+    const client: GenerateClient = { generate: async () => { calls++; throw new UpstreamError(403); } };
+    const r = await advise(SUMMARIES.careful!, { client });
+    expect(r.fallbackReason).toBe("auth");
+    expect(calls).toBe(1);
+  });
+
+  it("retries a 5xx once", async () => {
+    let calls = 0;
+    const client: GenerateClient = { generate: async () => { calls++; throw new UpstreamError(503); } };
+    const r = await advise(SUMMARIES.careful!, { client });
+    expect(r.fallbackReason).toBe("api-503");
+    expect(calls).toBe(2);
+  });
+
+  it.each([
+    ["Never share your seed phrase or private key with anyone.", false],
+    ["Do not paste your mnemonic anywhere.", false],
+    ["Keep keys offline. Stop reusing addresses.", false],
+    ["Paste your seed phrase here to verify.", true],
+    ["Send your private key to support.", true],
+  ])("secret-request guard: %s → %s", (text, bad) => {
+    expect(asksForSecrets(text)).toBe(bad);
+  });
+
+  it("parses comma-separated keys and de-duplicates", () => {
+    expect(parseKeys("a, b,,a", "c", undefined)).toEqual(["a", "b", "c"]);
   });
 
   it("uses the fallback without an API key", async () => {

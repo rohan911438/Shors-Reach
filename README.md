@@ -21,7 +21,7 @@ Entry for the **QoreChain Developer Fest — "Build Before Q-Day"** · Track: **
 
 1. **Key-level exposure scan** — Bitcoin address / public key / xpub, any `0x…` (7 EVM chains) or `qor1…`. Derives all 7 sibling forms of each key (P2PK c/u, P2PKH c/u, P2WPKH, P2SH-P2WPKH, BIP-86 Taproot), finds raw-key outputs by script hash, applies the cross-chain EVM rule, Safe owners, EIP-7702. Runs in the browser.
 2. **Evidence for every red row** — each *Exposed now* verdict links to the transaction that revealed the key. No evidence → it's downgraded to *Unknown* (engine invariant, tested).
-3. **AI advisor** — Claude Opus 5.5 turns an **anonymised** summary into a calm, prioritised plan; deterministic rule-based fallback; you can see exactly what was sent.
+3. **AI advisor** — Google Gemini (`gemini-3.5-flash`) turns an **anonymised** summary into a calm, prioritised plan; deterministic rule-based fallback; you can see exactly what was sent.
 4. **QoreChain account check** — is an ML-DSA-87 key registered? Is an EVM window open, and what's the most an attacker could move if ECDSA broke tomorrow?
 5. **Quantum Pass** — a soulbound pass minted only for accounts protected by a registered ML-DSA-87 key, bound on-chain to that key.
 6. **Public counter + share card** — passes, attested exposure buckets, chains; a 1200×675 card with no addresses.
@@ -53,7 +53,7 @@ Passes are soulbound (ERC-5192 `locked`, all transfer/approve paths revert), one
  │ Prices: CoinGecko             │          │ EVM: QuantumPass ─▶ 0x0a01/0a02│
  └──────────┬───────────────────┘          └───────▲───────────────▲───────┘
             │ anonymised summary                    │ attest()      │ mint()
-     /api/advise (Claude)                   /api/attest      EVM-capable signer
+     /api/advise (Gemini)                   /api/attest      EVM-capable signer
             │                                       ▲
             ▼                     hybrid native proof (QoreX signAndBroadcast)
         /plan page  ──────────────────────────────▶ /pass stepper
@@ -65,7 +65,7 @@ Scan rules, statuses and limits in plain words: the in-app **Methodology** page 
 
 - **App:** Vite + React + TypeScript, wagmi/viem, RainbowKit, `@qorechain/qorex-rainbowkit`, `@qorechain/qorex-types`, `@qorechain/sdk`, `@qorechain/evm`; `@noble/*` + `@scure/*` for Bitcoin key/script work; hash router (scan input stays in the URL fragment).
 - **Contracts:** Solidity 0.8.28, Foundry; QoreChain precompiles `pqcVerify` (0x0a01) and `pqcKeyStatus` (0x0a02).
-- **AI:** Anthropic Messages API, Claude Opus 5.5, structured JSON output, zod-validated both ways — see [AI_USAGE.md](AI_USAGE.md).
+- **AI:** Google Gemini API (`gemini-3.5-flash`, REST, JSON-schema structured output, key rotation), zod-validated both ways — see [AI_USAGE.md](AI_USAGE.md).
 - **Tests:** 105 app tests (scan engine on recorded mainnet fixtures incl. BIP-84 vectors, advisor, pass proof/relayer) + 18 Foundry tests (2 fuzz suites, attack cases). CI: typecheck, tests, build, forge.
 - **Built with Claude Code** following a gated plan: [docs/prompts](docs/prompts) (P01→P13) and [PROGRESS.md](docs/prompts/PROGRESS.md).
 
@@ -73,7 +73,7 @@ Scan rules, statuses and limits in plain words: the in-app **Methodology** page 
 
 ```sh
 cd app && npm install && npm run dev            # http://localhost:5173 — scan, plan, dashboard work with no keys
-# optional, in app/.env (gitignored): ANTHROPIC_API_KEY=… for the AI plan; QORE_ATTESTER_MNEMONIC=… (testnet) for /api/attest
+# optional, in app/.env (gitignored): GEMINI_API_KEYS=… (comma separated) for the AI plan; QORE_ATTESTER_MNEMONIC=… (testnet) for /api/attest
 cd contracts && npm install && npm run forge-std && forge test
 ```
 

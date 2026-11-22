@@ -14,7 +14,6 @@
     "scan:live": "tsx scripts/scan-live.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.12.0",
     "@cosmjs/stargate": "^0.39.0",
     "@noble/curves": "^1.9.1",
     "@noble/hashes": "^1.8.0",

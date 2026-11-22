@@ -13,8 +13,8 @@ Shor's Reach scans Bitcoin, 7 EVM chains and QoreChain at the key level — not 
 - `create-qorechain-dapp` scaffold: `viem-wagmi` (Vite, React, wagmi, RainbowKit + QoreX) and `foundry` templates — first commit untouched.
 - Scan engine in TypeScript, runs in the browser: mempool.space Esplora, 7 public EVM RPCs, QoreChain REST (PQC account + EVM window), CoinGecko. 7 sibling forms per key, P2PK by script hash, xpub gap-limit scan, evidence invariant.
 - `QuantumPass.sol`: soulbound (ERC-5192). `mint()` verifies ML-DSA-87 on-chain with the `pqcVerify` precompile (0x0a01) against the key from `pqcKeyStatus` (0x0a02). `attest()` serves QoreX users: their proof is a hybrid-signed native self-transfer whose memo commits to the pass; the contract re-checks the registry and burns the proof.
-- AI advisor: Claude Opus 5.5, structured JSON output, zod validation in and out, identifier leak filters, deterministic fallback.
-- 105 app tests + 18 Foundry tests (fuzz + attack cases); CI on GitHub Actions. Built with Claude Code through a gated P01→P13 plan.
+- AI advisor: Google Gemini 3.5 Flash, structured JSON output, zod validation in and out, identifier leak filters, deterministic fallback.
+- 113 app tests + 18 Foundry tests (fuzz + attack cases); CI on GitHub Actions. Built with Claude Code through a gated P01→P13 plan.
 
 ## Kits & network features actually used
 

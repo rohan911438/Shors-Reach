@@ -18,7 +18,7 @@ Date: 21 Nov 2026 · Scope: whole repo (`app/`, `app/api/`, `contracts/`, script
 | # | Sev | Area | Finding | Status |
 |---|---|---|---|---|
 | 1 | Medium | `api/attest.ts` | No rate limit: anyone holding valid proofs could make the attester spend gas repeatedly (each proof is single-use on-chain, but failed/duplicate requests still cost RPC + window opens). | **Fixed** — 5 req/IP/hour (`src/lib/rateLimit.ts`); duplicate/used proofs are rejected *before* any tx (`hasPass`, `nativeTxUsed`). |
-| 2 | Low | `api/advise.ts` | Rate limiter is per serverless instance (in-memory), so the effective limit is higher under scale-out. | Accepted for a hackathon demo; documented. Upstream Anthropic rate limits and `max_tokens` bound the cost. |
+| 2 | Low | `api/advise.ts` | Rate limiter is per serverless instance (in-memory), so the effective limit is higher under scale-out. | Accepted for a hackathon demo; documented. Upstream Gemini quotas and `maxOutputTokens` bound the cost. |
 | 3 | Low | Trust model | `attest()` trusts one immutable attester to have checked the native proof. The contract still re-reads the PQC key registry (0x0a02) and binds `pqKeyHash`, and each proof tx is single-use — but a compromised attester key could mint passes for any account **that has a registered PQ key**. | Accepted & documented (README "Limits", `/pass` "How the proof works"). Testnet only; the self-mint path (`mint()`) needs no trust. Removed when QoreX ships `signArbitrary`/EVM signing. |
 | 4 | Low | Pass fields | Score / chains / USD buckets are **self-reported** (from the user's own browser scan). | By design; labelled "self-reported" on `/dashboard` and in the contract docs. Nothing is paid out based on them. |
 | 5 | Info | Headers | No CSP: the app talks to many public RPCs and a wallet extension. | Accepted; `Referrer-Policy: no-referrer`, `nosniff`, `Permissions-Policy` set in `vercel.json`. |
@@ -28,7 +28,7 @@ Date: 21 Nov 2026 · Scope: whole repo (`app/`, `app/api/`, `contracts/`, script
 
 **Secrets**
 - `git ls-files` + full `git log -p --all` scanned for the testnet mnemonic words, `sk-ant-` keys and 32-byte hex keys: **no hits** in tracked files or history.
-- `.env` and `.env.*` are gitignored (`!.env.example` only). The testnet mnemonic lives in `contracts/.env` only; the attester reads `QORE_ATTESTER_MNEMONIC` from server env. The Anthropic key is server-side only (`ANTHROPIC_API_KEY`, never `VITE_`-prefixed, so never bundled).
+- `.env` and `.env.*` are gitignored (`!.env.example` only). The testnet mnemonic lives in `contracts/.env` only; the attester reads `QORE_ATTESTER_MNEMONIC` from server env. The Gemini keys are server-side only (`GEMINI_API_KEYS`, never `VITE_`-prefixed, so never bundled).
 
 **Data flows vs the privacy table**
 | Data | Where it goes | Check |

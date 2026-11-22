@@ -31,7 +31,7 @@ function apiDev(env: Record<string, string>): Plugin {
           });
           const out = await mod.handleAdvise(
             request,
-            { apiKey: env.ANTHROPIC_API_KEY, model: env.ADVISOR_MODEL, rateLimit: 100, log: (m) => server.config.logger.info(m) },
+            { apiKeys: mod.parseKeys(env.GEMINI_API_KEYS, env.GEMINI_API_KEY), model: env.ADVISOR_MODEL, rateLimit: 100, log: (m) => server.config.logger.info(m) },
             req.socket.remoteAddress ?? "local",
           );
           res.statusCode = out.status;

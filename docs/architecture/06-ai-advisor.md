@@ -4,7 +4,7 @@
 Turn a technical scan result into a calm, prioritised, personal plan. It is a product feature (Best AI-Native Build), not decoration.
 
 ## Endpoint
-`POST /api/advise` — Vercel Node function (default Node runtime). Secrets: `ANTHROPIC_API_KEY`. Model from env `ADVISOR_MODEL`, default `claude-opus-5-5`.
+`POST /api/advise` — Vercel Node function (default Node runtime). Secrets: `GEMINI_API_KEYS` (comma separated, rotated on 401/403/429) or `GEMINI_API_KEY`. Model from env `ADVISOR_MODEL`, default `gemini-3.5-flash`, called over REST with `responseJsonSchema` and `thinkingLevel: low`. Output guard: identifier leak filter + negation-aware secret-request filter ("never share your seed" passes, "paste your seed" fails).
 
 ## Input (anonymised — validated server-side, anything else rejected)
 ```json

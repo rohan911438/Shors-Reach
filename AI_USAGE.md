@@ -7,7 +7,7 @@ Shor's Reach applies for the **Best AI-Native Build** side award. This file expl
 | | |
 |---|---|
 | Where | `/plan` page → `POST /api/advise` (`app/api/advise.ts`, core in `app/src/advisor/`) |
-| Model | Claude Opus 5.5 (`claude-opus-5-5`), configurable with `ADVISOR_MODEL` |
+| Model | Google Gemini `gemini-3.5-flash` (low thinking level), configurable with `ADVISOR_MODEL`; keys from `GEMINI_API_KEYS`, rotated on 401/403/429 |
 | Input | An **anonymised** scan summary only: chain, address format, verdict, reason code, USD rounded to 2 significant figures, questionnaire answers, QoreChain key/window flags. No addresses, transactions, xpubs or exact amounts. The page shows the exact JSON sent ("What the advisor saw"). |
 | Guardrails (in) | Strict zod schema (unknown fields rejected); a leak filter rejects anything that looks like a Bitcoin/EVM/QoreChain address, txid or xpub **before** parsing, and the error message never echoes it; 20 KB body cap; per-IP rate limit. |
 | Output | Structured JSON (`output_config.format: json_schema`): summary, prioritised actions with why/how, stop-doing, unknowns, QoreChain note. Validated again with zod. |
