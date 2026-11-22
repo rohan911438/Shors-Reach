@@ -78,6 +78,8 @@ cd contracts && npm install && npm run forge-std && forge test
 ```
 
 Tests: `cd app && npm test` · `cd contracts && forge test` · live scan CLI: `cd app && npm run scan:live -- <input>`.
+npm run build && npm run preview   # then, in another shell:
+npm run e2e                         # E2E smoke via your installed Edge/Chrome
 
 ## Deployments (qorechain-diana)
 

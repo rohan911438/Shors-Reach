@@ -1,15 +1,25 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import { href, useRoute, type Route } from "./lib/router.js";
-import { Dashboard } from "./pages/Dashboard.js";
 import { Home } from "./pages/Home.js";
-import { Methodology } from "./pages/Methodology.js";
-import { Pass } from "./pages/Pass.js";
-import { Plan } from "./pages/Plan.js";
-import { ScanPage } from "./pages/Scan.js";
 import { Icon } from "./components/ui.js";
 import { QUANTUM_PASS_ADDRESS } from "./qore/quantumPass.js";
+
+// Landing is eager; every other page is its own chunk.
+const ScanPage = lazy(() => import("./pages/Scan.js").then((m) => ({ default: m.ScanPage })));
+const Plan = lazy(() => import("./pages/Plan.js").then((m) => ({ default: m.Plan })));
+const Pass = lazy(() => import("./pages/Pass.js").then((m) => ({ default: m.Pass })));
+const Dashboard = lazy(() => import("./pages/Dashboard.js").then((m) => ({ default: m.Dashboard })));
+const Methodology = lazy(() => import("./pages/Methodology.js").then((m) => ({ default: m.Methodology })));
+
+function PageLoading() {
+  return (
+    <div className="card" aria-busy="true">
+      <div className="scanline" />
+    </div>
+  );
+}
 
 const NAV: { label: string; route: Route; match: Route["name"][] }[] = [
   { label: "Scan", route: { name: "home" }, match: ["home", "scan"] },
@@ -104,12 +114,14 @@ export function App() {
       </header>
 
       <main className="wrap" id="main" key={route.name}>
-        {route.name === "home" && <Home />}
-        {route.name === "scan" && <ScanPage input={route.input} />}
-        {route.name === "plan" && <Plan />}
-        {route.name === "pass" && <Pass />}
-        {route.name === "dashboard" && <Dashboard />}
-        {route.name === "methodology" && <Methodology anchor={route.anchor} />}
+        <Suspense fallback={<PageLoading />}>
+          {route.name === "home" && <Home />}
+          {route.name === "scan" && <ScanPage input={route.input} />}
+          {route.name === "plan" && <Plan />}
+          {route.name === "pass" && <Pass />}
+          {route.name === "dashboard" && <Dashboard />}
+          {route.name === "methodology" && <Methodology anchor={route.anchor} />}
+        </Suspense>
       </main>
 
       <footer className="footer">

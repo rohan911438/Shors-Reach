@@ -66,18 +66,22 @@ function Results({ result }: { result: ScanResult }) {
   const failed = result.sources.filter((x) => !x.ok);
   const hasUnknownOffchain = result.holdings.some((h) => h.reason === "evm-offchain-signature-possible");
   const isEvm = result.inputKind === "evm-address" || result.inputKind === "qore-address";
+  // A balance source failed and nothing was found: that is "we don't know", never "no funds" / safe.
+  const incomplete = visible.length === 0 && failed.some((f) => f.source !== "coingecko");
 
   return (
     <>
       <section className="card">
         <div className="headline">
           <div>
-            <div className="eyebrow">Open to a quantum attacker today</div>
-            <div className={`big-num ${exposedNow === 0 && t.count.EXPOSED_NOW === 0 ? "safe" : ""}`}>
-              {result.scoreBasis === "usd" ? usd(exposedNow, { compact: true }) : `${t.count.EXPOSED_NOW} holding${t.count.EXPOSED_NOW === 1 ? "" : "s"}`}
+            <div className="eyebrow">{incomplete ? "Scan incomplete" : "Open to a quantum attacker today"}</div>
+            <div className={`big-num ${incomplete ? "unknown" : exposedNow === 0 && t.count.EXPOSED_NOW === 0 ? "safe" : ""}`}>
+              {incomplete ? "Unknown" : result.scoreBasis === "usd" ? usd(exposedNow, { compact: true }) : `${t.count.EXPOSED_NOW} holding${t.count.EXPOSED_NOW === 1 ? "" : "s"}`}
             </div>
             <p className="muted" style={{ marginTop: 12 }}>
-              {visible.length === 0
+              {incomplete
+                ? `We couldn't reach ${failed.map((f) => f.source).join(", ")}. Nothing here means safe — please retry in a minute.`
+                : visible.length === 0
                 ? "No funds found for this input."
                 : t.count.EXPOSED_NOW > 0
                   ? "These coins sit behind public keys that are already on-chain. Each row below links to the proof."
@@ -106,7 +110,7 @@ function Results({ result }: { result: ScanResult }) {
             <div className="gauge" style={{ ["--p" as string]: result.score }} role="img" aria-label={`Exposure score ${result.score} out of 100`}>
               <div>
                 <span>
-                  <b>{result.score}</b>
+                  <b>{incomplete ? "—" : result.score}</b>
                   <span className="faint" style={{ fontSize: 12 }}>
                     / 100 exposed
                   </span>
@@ -117,9 +121,15 @@ function Results({ result }: { result: ScanResult }) {
               Share of {result.scoreBasis === "usd" ? "value" : "holdings"} exposed at rest
             </div>
             <div className="row" style={{ justifyContent: "center", marginTop: 18 }}>
-              <a className="btn primary" href={href({ name: "plan" })}>
-                Get my plan
-              </a>
+              {incomplete ? (
+                <button className="btn primary" type="button" disabled={s.running} onClick={() => void s.run(result.input, s.questionnaire)}>
+                  Retry scan
+                </button>
+              ) : (
+                <a className="btn primary" href={href({ name: "plan" })}>
+                  Get my plan
+                </a>
+              )}
               <a className="btn" href={href({ name: "pass" })}>
                 Protect on QoreChain
               </a>

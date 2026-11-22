@@ -68,5 +68,19 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), apiDev(env)],
     server: { port: 5173, proxy },
     preview: { proxy },
+    build: {
+      rollupOptions: {
+        output: {
+          // Long-lived vendor chunks: wallet stack and crypto libs change rarely.
+          manualChunks(id: string) {
+            if (!id.includes("node_modules")) return;
+            if (/@rainbow-me|wagmi|@walletconnect|@reown|@coinbase|@metamask/.test(id)) return "wallet";
+            if (/viem|@noble|@scure|abitype|[\\/]ox[\\/]/.test(id)) return "crypto";
+            if (/@cosmjs|cosmjs-types|@qorechain|protobufjs|[\\/]long[\\/]/.test(id)) return "cosmos";
+            if (/react-dom|[\\/]react[\\/]|scheduler/.test(id)) return "react";
+          },
+        },
+      },
+    },
   };
 });

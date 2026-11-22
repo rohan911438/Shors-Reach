@@ -836,3 +836,7 @@ main > :first-child:not(.hero) {
   margin: 0;
   max-width: none;
 }
+.big-num.unknown {
+  color: var(--unknown);
+  text-shadow: none;
+}
