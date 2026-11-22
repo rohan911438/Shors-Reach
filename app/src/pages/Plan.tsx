@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { fallbackPlan } from "../advisor/fallback.js";
 import type { AdviceResponse } from "../advisor/schema.js";
+import { AskPanel } from "../components/AskPanel.js";
 import { CHAIN_LABEL, FORMAT_LABEL, STATUS_LABEL, usd } from "../lib/format.js";
 import { href } from "../lib/router.js";
 import { useScan } from "../lib/scanStore.js";
@@ -124,6 +125,8 @@ export function Plan() {
           </section>
         </>
       )}
+
+      {state.kind === "done" && <AskPanel summary={summary} plan={state.advice.plan} />}
 
       <section className="card" style={{ marginTop: 20 }}>
         <div className="row" style={{ justifyContent: "space-between" }}>

@@ -1338,3 +1338,14 @@ main > :first-child:not(.home) {
 .scanbox input {
   text-align: left;
 }
+
+/* ---------------------------------------------------------------- Ask panel */
+.ask-log { display: grid; gap: 14px; margin-top: 16px; }
+.ask-turn { display: grid; gap: 8px; }
+.ask-q { justify-self: end; max-width: 80%; background: var(--accent); color: var(--lime-ink); padding: 9px 14px; border-radius: 14px 14px 4px 14px; font-weight: 500; }
+.ask-a { max-width: 92%; background: var(--surface-2); border: 1px solid var(--border); padding: 12px 16px; border-radius: 14px 14px 14px 4px; }
+.ask-a p { margin: 0 0 8px; }
+.ask-a p:last-of-type { margin-bottom: 4px; }
+.ask-src { font-size: 11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
+.ask .chip:disabled { opacity: .5; cursor: default; }
+.ask-box::before { content: "?"; }
