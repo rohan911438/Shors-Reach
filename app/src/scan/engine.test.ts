@@ -6,6 +6,9 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { secp256k1 } from "@noble/curves/secp256k1";
+
+import { bytesToHex, encode, hash160, scripts } from "./btc/script.js";
 import { detectInput, InputError, scan } from "./index.js";
 import { fixtureTransport, type NetResponse } from "./net.js";
 import { evmToQor, qorToEvm } from "./qore/scan.js";
@@ -147,5 +150,35 @@ describe("detectInput", () => {
   });
   it("rejects garbage", () => {
     expect(() => detectInput("hello")).toThrow(InputError);
+  });
+});
+
+describe("graceful degradation", () => {
+  it("a failing sibling lookup keeps the proven result instead of failing the whole Bitcoin scan", async () => {
+    // Synthetic spent P2WPKH address: its spend reveals the key, then every sibling lookup times out.
+    const pk = secp256k1.getPublicKey(Uint8Array.from({ length: 32 }, (_, i) => i + 1), true);
+    const program = hash160(pk);
+    const addr = encode.p2wpkh(program);
+    const script = scripts.p2wpkh(program);
+    const stats = { funded_txo_count: 2, funded_txo_sum: 300_000, spent_txo_count: 1, spent_txo_sum: 100_000, tx_count: 2 };
+    const empty = { funded_txo_count: 0, funded_txo_sum: 0, spent_txo_count: 0, spent_txo_sum: 0, tx_count: 0 };
+    const spend = {
+      txid: "ab".repeat(32),
+      status: { confirmed: true, block_height: 800_000 },
+      vin: [{ is_coinbase: false, prevout: { scriptpubkey: script, value: 100_000 }, witness: ["30".repeat(70), bytesToHex(pk)] }],
+      vout: [{ scriptpubkey: "0014" + "00".repeat(20), value: 99_000 }],
+    };
+    const transport = async (req: { url: string }): Promise<NetResponse> => {
+      if (req.url.includes("/scripthash/")) return { status: 503, text: "timeout" };
+      if (req.url.endsWith(`/address/${addr}`)) return { status: 200, text: JSON.stringify({ address: addr, chain_stats: stats, mempool_stats: empty }) };
+      if (req.url.includes(`/address/${addr}/txs`)) return { status: 200, text: JSON.stringify([spend]) };
+      if (req.url.includes("coingecko")) return { status: 200, text: JSON.stringify({ bitcoin: { usd: 60_000 } }) };
+      return { status: 404, text: "not found" };
+    };
+    const r = await scan(addr, { transport });
+    expect(r.sources.find((x) => x.source === "mempool.space")?.ok).toBe(true);
+    const own = r.holdings.find((h) => h.locator === addr)!;
+    expect(own.status).toBe("EXPOSED_NOW");
+    expect(own.evidence?.txid).toBe(spend.txid);
   });
 });

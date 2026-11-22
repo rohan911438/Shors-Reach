@@ -14,7 +14,8 @@
     "scan:live": "tsx scripts/scan-live.ts",
     "e2e": "tsx scripts/e2e.ts",
     "advise:live": "tsx scripts/advise-live.ts",
-    "workflows": "tsx scripts/workflows.ts"
+    "workflows": "tsx scripts/workflows.ts",
+    "benchmark": "tsx scripts/benchmark.ts"
   },
   "dependencies": {
     "@cosmjs/stargate": "^0.39.0",

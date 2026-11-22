@@ -186,7 +186,12 @@ export async function scanBtcAddress(ctx: BtcContext, addr: string, opts: { foll
   if (followSiblings) {
     for (const k of keys.slice(0, 15)) {
       ctx.onProgress?.({ type: "info", message: `Following revealed key ${k.pubkey.slice(0, 10)}… into 7 output forms` });
-      out.push(...(await scanBtcPubkey(ctx, k.pubkey, k.txid)));
+      try {
+        out.push(...(await scanBtcPubkey(ctx, k.pubkey, k.txid)));
+      } catch {
+        // One slow sibling lookup must not throw away everything else we already proved.
+        ctx.onProgress?.({ type: "info", message: `Could not follow key ${k.pubkey.slice(0, 10)}… (data source timed out) — other results kept` });
+      }
     }
   }
   return dedupe(out);
@@ -221,6 +226,11 @@ export function deriveXpubAddress(xpub: string, change: 0 | 1, index: number): s
   return encode.p2sh(hash160(hexToBytesSafe(scripts.p2wpkh(h))));
 }
 
+function deriveFormat(xpub: string): Holding["format"] {
+  const k = xpubKind(xpub);
+  return k === "zpub" ? "p2wpkh" : k === "ypub" ? "p2sh-p2wpkh" : "p2pkh";
+}
+
 function hexToBytesSafe(hex: string): Uint8Array {
   return Uint8Array.from(hex.match(/../g)!.map((b) => parseInt(b, 16)));
 }
@@ -249,8 +259,15 @@ export async function scanBtcXpub(ctx: BtcContext, xpub: string, opts: XpubScanO
         continue;
       }
       unused = 0;
-      const hs = await scanBtcAddress(ctx, addr);
-      out.push(...hs.map((h) => ({ ...h, details: { ...h.details, hdPath: `${change}/${i}` } })));
+      try {
+        const hs = await scanBtcAddress(ctx, addr);
+        out.push(...hs.map((h) => ({ ...h, details: { ...h.details, hdPath: `${change}/${i}` } })));
+      } catch {
+        // Keep the wallet scan going; this address becomes UNKNOWN (never "safe") with the balance we already know.
+        const bal = balanceOf(info);
+        if (bal > 0) out.push(holding(addr, deriveFormat(xpub), bal, "UNKNOWN", "source-unavailable", undefined, { hdPath: `${change}/${i}` }));
+        ctx.onProgress?.({ type: "info", message: `Lookup for one wallet address timed out — marked Unknown, scan continues` });
+      }
     }
     ctx.onProgress?.({ type: "info", message: `${change === 0 ? "Receive" : "Change"} chain done (${scanned} addresses so far)` });
   }
