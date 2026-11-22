@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";
 
+import { CountUp } from "../components/ui.js";
 import { CHAIN_BITS, CHAIN_LABEL, short, usd } from "../lib/format.js";
 import { QORE_TESTNET_ID, usePassStats } from "../lib/passStats.js";
 import { EXPLORER_TX } from "../pass/qorex.js";
@@ -58,16 +59,26 @@ export function Dashboard() {
 
   return (
     <>
-      <div className="eyebrow">Public counter · read live from QoreChain testnet</div>
-      <h1 style={{ fontSize: "clamp(30px,5vw,48px)" }}>Who has moved under post-quantum protection</h1>
+      <header className="page-head">
+        <a className="live-chip" href={`https://explore.qore.network/address/${QUANTUM_PASS_ADDRESS}`} target="_blank" rel="noreferrer">
+          <span className="live-dot" /> Read live from QoreChain testnet
+        </a>
+        <h1>
+          Who has moved under <em className="serif">post-quantum</em> protection
+        </h1>
+      </header>
 
       <div className="stats" style={{ marginTop: 20 }}>
         <div className="stat">
-          <div className="num grad-text">{stats.totalPasses ?? "…"}</div>
+          <div className="num grad-text">
+            <CountUp value={stats.totalPasses} />
+          </div>
           <div className="lbl">Quantum Passes minted</div>
         </div>
         <div className="stat">
-          <div className="num grad-text">{stats.attestedExposedUsdFloor === null ? "…" : `${usd(stats.attestedExposedUsdFloor, { compact: true })}+`}</div>
+          <div className="num grad-text">
+            <CountUp value={stats.attestedExposedUsdFloor} format={(n) => usd(n, { compact: true })} />+
+          </div>
           <div className="lbl">exposed value attested (self-reported buckets, lower bound)</div>
         </div>
         <div className="stat">

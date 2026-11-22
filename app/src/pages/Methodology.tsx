@@ -39,7 +39,9 @@ export function Methodology({ anchor }: { anchor?: string }) {
   return (
     <article className="prose">
       <div className="eyebrow">Methodology</div>
-      <h1 style={{ fontSize: "clamp(32px,5vw,48px)" }}>How Shor's Reach decides</h1>
+      <h1 className="page-title">
+        How Shor's Reach <em className="serif">decides</em>
+      </h1>
       <p>
         Shor's algorithm turns an elliptic-curve <b>public key</b> into its private key. An address is only a hash of a key, so the question is never
         “which address?” but “has the key behind these coins ever been revealed — anywhere?”. Shor's Reach answers that question at the key level and

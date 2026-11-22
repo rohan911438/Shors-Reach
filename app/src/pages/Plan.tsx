@@ -55,7 +55,9 @@ export function Plan() {
       <div className="row" style={{ justifyContent: "space-between", marginBottom: 18 }}>
         <div>
           <div className="eyebrow">Your plan</div>
-          <h1 style={{ fontSize: "clamp(28px,4vw,40px)", margin: 0 }}>What to do, in order</h1>
+          <h1 className="page-title" style={{ margin: 0 }}>
+            What to do, <em className="serif">in order</em>
+          </h1>
         </div>
         {state.kind === "done" && (
           <span className={`pill ${state.advice.source === "ai" ? "PROTECTED" : "UNKNOWN"}`} title={state.advice.fallbackReason}>

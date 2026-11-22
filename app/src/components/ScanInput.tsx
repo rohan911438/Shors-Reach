@@ -47,7 +47,7 @@ export function ScanInput({ initial = "", compact = false }: { initial?: string;
   };
 
   return (
-    <div>
+    <div className={compact ? "compact" : undefined}>
       <form className="scanbox" onSubmit={submit} role="search">
         <label htmlFor="scan-input" className="sr-only">
           Bitcoin address, public key, xpub, 0x or qor1 address

@@ -1,5 +1,6 @@
 import "@rainbow-me/rainbowkit/styles.css";
 import "./styles.css";
+import "./polish.css";
 
 import { darkTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

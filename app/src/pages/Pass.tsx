@@ -93,7 +93,9 @@ export function Pass() {
   return (
     <>
       <div className="eyebrow">Quantum Pass · QoreChain testnet</div>
-      <h1 style={{ fontSize: "clamp(30px,5vw,48px)" }}>Lock your account, then prove it.</h1>
+      <h1 className="page-title">
+        Lock your account, then <em className="serif">prove it.</em>
+      </h1>
       <p className="muted" style={{ maxWidth: 720 }}>
         A soulbound pass for accounts protected by a registered <b>ML-DSA-87</b> post-quantum key. Your proof is a QoreChain transaction that the chain
         only accepts with a hybrid secp256k1 + ML-DSA-87 signature. The pass records your scan's buckets — never your addresses.
