@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640">
+  <!-- Full-bleed: Telegram crops bot photos to a circle; the mark sits inside the central 70%. -->
+  <rect width="640" height="640" fill="#c8ff3d"/>
+  <g fill="none" stroke="#0a0a08" stroke-width="22" stroke-linecap="round">
+    <ellipse cx="320" cy="320" rx="62" ry="168"/>
+    <ellipse cx="320" cy="320" rx="168" ry="62" transform="rotate(30 320 320)"/>
+    <ellipse cx="320" cy="320" rx="168" ry="62" transform="rotate(-30 320 320)"/>
+  </g>
+  <!-- Exposed key: red nucleus with an alert ring -->
+  <circle cx="320" cy="320" r="58" fill="none" stroke="#ff4b33" stroke-opacity="0.35" stroke-width="10"/>
+  <circle cx="320" cy="320" r="30" fill="#ff4b33"/>
+</svg>
