@@ -182,3 +182,23 @@ describe("graceful degradation", () => {
     expect(own.evidence?.txid).toBe(spend.txid);
   });
 });
+
+describe("Esplora failover", () => {
+  it("falls back to the second operator when mempool.space rate-limits, and the verdict is unchanged", async () => {
+    const fx = load("genesis-pubkey");
+    const viaBlockstream = Object.fromEntries(Object.entries(fx).map(([k, v]) => [k.replace("https://mempool.space/api", "https://blockstream.info/api"), v]));
+    const both = fixtureTransport({ ...fx, ...viaBlockstream });
+    let primaryHits = 0;
+    const transport: typeof both = async (req) => {
+      if (req.url.startsWith("https://mempool.space/api")) {
+        primaryHits++;
+        return { status: 429, text: "rate limited" };
+      }
+      return both(req);
+    };
+    const r = await scan(GENESIS, { transport });
+    expect(primaryHits).toBeGreaterThan(0);
+    expect(r.sources.find((s) => s.source === "mempool.space")?.ok).toBe(true);
+    expect(r.holdings.find((h) => h.format === "p2pk")?.status).toBe("EXPOSED_NOW");
+  });
+});

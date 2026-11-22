@@ -75,8 +75,11 @@ export function CountUp({ value, format = (n) => Math.round(n).toLocaleString("e
       const t0 = performance.now();
       const tick = (t: number) => {
         const p = Math.min(1, (t - t0) / duration);
-        setShown(value * (1 - Math.pow(1 - p, 3)));
+        // Write the text directly: no React re-render per frame.
+        const node = ref.current?.firstChild;
+        if (node) node.nodeValue = format(value * (1 - Math.pow(1 - p, 3)));
         if (p < 1) raf = requestAnimationFrame(tick);
+        else setShown(value);
       };
       raf = requestAnimationFrame(tick);
     });

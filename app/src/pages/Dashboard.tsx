@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { usePublicClient } from "wagmi";
 
 import { CountUp } from "../components/ui.js";
+import { qoreClient } from "../qore/client.js";
 import { CHAIN_BITS, CHAIN_LABEL, short, usd } from "../lib/format.js";
-import { QORE_TESTNET_ID, usePassStats } from "../lib/passStats.js";
+import { usePassStats } from "../lib/passStats.js";
 import { EXPLORER_TX } from "../pass/qorex.js";
 import { usdBucketFloor } from "../pass/proof.js";
 import { QUANTUM_PASS_ABI, QUANTUM_PASS_ADDRESS, QUANTUM_PASS_DEPLOY_BLOCK } from "../qore/quantumPass.js";
@@ -20,7 +20,7 @@ interface Minted {
 const PAGE = 5_000n;
 
 function useRecentMints(limit = 12) {
-  const client = usePublicClient({ chainId: QORE_TESTNET_ID });
+  const client = qoreClient;
   const [state, setState] = useState<{ items: Minted[]; loading: boolean; error?: string }>({ items: [], loading: true });
   useEffect(() => {
     if (!client) return;

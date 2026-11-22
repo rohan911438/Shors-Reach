@@ -19,7 +19,7 @@ import {
 } from "@qorechain/sdk";
 import { createPublicClient, defineChain, http } from "viem";
 
-import { POST } from "../api/attest.js";
+import { POST } from "../server/attest.js";
 import { buildMemo } from "../src/pass/proof.js";
 import { QUANTUM_PASS_ABI, QUANTUM_PASS_ADDRESS } from "../src/qore/quantumPass.js";
 

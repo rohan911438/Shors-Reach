@@ -5,7 +5,7 @@
  */
 import { isAddress } from "viem";
 
-import { Esplora, DEFAULT_ESPLORA } from "./btc/esplora.js";
+import { Esplora, DEFAULT_ESPLORA, FALLBACK_ESPLORA } from "./btc/esplora.js";
 import { dedupe, scanBtcAddress, scanBtcPubkey, scanBtcXpub } from "./btc/scan.js";
 import { isBtcAddress, isPubkeyHex, xpubKind } from "./btc/script.js";
 import { scanEvmAddress } from "./evm/scan.js";
@@ -47,7 +47,8 @@ export async function scan(raw: string, opts: EngineOptions = {}): Promise<ScanR
   let qore: QoreAccountFacts | undefined;
 
   if (kind.startsWith("btc")) {
-    const esplora = new Esplora(net, opts.esploraBase ?? DEFAULT_ESPLORA);
+    // Tests pin esploraBase; live scans fail over to a second Esplora operator on 429/5xx/timeouts.
+    const esplora = new Esplora(net, opts.esploraBase ?? DEFAULT_ESPLORA, opts.esploraBase ? [] : FALLBACK_ESPLORA);
     const ctx = { esplora, onProgress: progress };
     progress?.({ type: "source-start", source: "mempool.space", label: "Bitcoin (7 key formats)" });
     try {

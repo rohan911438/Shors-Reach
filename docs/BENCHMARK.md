@@ -63,13 +63,14 @@ The HD-wallet case (BIP-84 test zpub) is in the script. On 22 Nov, mempool.space
 
 | Metric | Result | How |
 |---|---|---|
-| User-workflow tests | **20 / 20** steps, 5 personas, live chains + live AI | `npm run workflows` → [reports/workflows.md](reports/workflows.md) |
+| User-workflow tests (production) | **21 / 21** steps, 5 personas, live chains + live AI, on shors-reach.vercel.app | `npm run workflows -- <url>` → [reports/workflows-production.md](reports/workflows-production.md) |
 | E2E smoke | 9 / 9 | `npm run e2e` |
-| Unit / engine tests | 115 app + 18 Foundry | `npm test`, `forge test` |
+| Unit / engine tests | 116 app + 18 Foundry | `npm test`, `forge test` |
 | Scan time (live) | genesis key ~7–9 s · Taproot ~2–4 s · EVM 8 chains ~3–6 s · reused P2SH ~10–19 s | benchmark script |
 | AI plan latency (Gemini 3.5 Flash, low thinking) | 5–19 s; rule-based fallback is instant | `npm run advise:live` |
-| Hero visible (dev server, cold) | ~3 s | workflows A1 |
-| App code (gzip) | ~24 kB app + lazily loaded pages; vendor chunks cached separately | `vite build` |
+| Lighthouse, production, desktop | Performance 88 · Accessibility 95 · Best practices 100 · SEO 100 · FCP 0.9 s · LCP 1.4 s · CLS 0.006 | lighthouse 12.6 |
+| Lighthouse, production, mobile (median of 3, 4× CPU throttle) | Performance 62 · Accessibility 95 · Best practices 100 · SEO 100 · FCP 2.5 s · LCP 4.1 s · CLS 0.01 | lighthouse 12.6 |
+| Initial JS | wallet stack (~310 kB gzip) moved off the critical path: it loads only when "Connect Wallet" is clicked | `vite build` |
 | Mobile (390 px) | no horizontal overflow on home, dashboard, methodology | workflows D |
 
-Still to measure after deploy: Lighthouse on the production URL (it needs the live deployment).
+Known gap: mobile Performance (62) is held back by the size of the animated landing page under 4× CPU throttling (main-thread render of the hero). Desktop is 88. Data sources are resilient: Bitcoin lookups fail over from mempool.space to blockstream.info on rate limits, 5xx or timeouts.

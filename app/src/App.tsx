@@ -1,9 +1,9 @@
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 import { href, useRoute, type Route } from "./lib/router.js";
 import { Home } from "./pages/Home.js";
 import { Icon } from "./components/ui.js";
+import { WalletButton } from "./components/WalletButton.js";
 import { QUANTUM_PASS_ADDRESS } from "./qore/quantumPass.js";
 
 // Landing is eager; every other page is its own chunk.
@@ -106,7 +106,7 @@ export function App() {
             </a>
           )}
           <div className="connect">
-            <ConnectButton chainStatus="icon" accountStatus="avatar" showBalance={false} />
+            <WalletButton />
           </div>
           <button
             className="icon-btn menu-btn"

@@ -7,7 +7,7 @@
 
 Entry for the **QoreChain Developer Fest — "Build Before Q-Day"** · Track: **Quantum Pass** · also applying: Best AI-Native Build, People's Choice.
 
-**Live demo:** _to be added after the Vercel deploy_ · **Video:** _to be added_ · **Cover:** [docs/cover.png](docs/cover.png) · **Contract:** [`0x4f54…56df` on qorechain-diana](https://explore.qore.network/address/0x4f54b69693458523223504b48fa7cd44657a56df)
+**Live demo:** [shors-reach.vercel.app](https://shors-reach.vercel.app) · **Video:** _to be added_ · **Cover:** [docs/cover.png](docs/cover.png) · **Contract:** [`0x4f54…56df` on qorechain-diana](https://explore.qore.network/address/0x4f54b69693458523223504b48fa7cd44657a56df)
 
 ---
 
@@ -78,6 +78,10 @@ cd contracts && npm install && npm run forge-std && forge test
 ```
 
 Tests: `cd app && npm test` · `cd contracts && forge test` · live scan CLI: `cd app && npm run scan:live -- <input>`.
+
+User workflows (5 personas, real browser, live chains + AI): `cd app && npm run workflows -- https://shors-reach.vercel.app` → [docs/reports/workflows-production.md](docs/reports/workflows-production.md). Benchmark vs other quantum-exposure tools: [docs/BENCHMARK.md](docs/BENCHMARK.md) (`npm run benchmark`).
+
+After editing `app/server/attest.ts`, run `npm run build:api` to regenerate the bundled `api/attest.js` (Vercel can't load @cosmjs's CJS→ESM require chain unbundled).
 npm run build && npm run preview   # then, in another shell:
 npm run e2e                         # E2E smoke via your installed Edge/Chrome
 

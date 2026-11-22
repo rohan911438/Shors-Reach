@@ -20,3 +20,13 @@ Mark each prompt ✅ only after its validation gate fully passes. Record evidenc
 | UI v2 polish | ✅ | 22 Nov | Landing rebuilt from docs/design/inspiration.md direction: blueprint grid + grain + aurora glow, Instrument Serif accents, live chip, chain marquee, attacker-view terminal, bento w/ cursor spotlight, 4-verdict cards, timeline, FAQ, CTA band, multi-column footer w/ wordmark; mobile menu, sun/moon toggle, count-ups, scroll reveal (all off under reduced-motion). Inner pages: unified headers. Verified via headless Edge screenshots (desktop + 390px) incl. a live genesis-key scan |
 
 Legend: ⬜ not started · 🟨 in progress · 🟥 gate failed · ✅ done
+
+
+## 22 Nov 2026 — UI v3, workflows, benchmark, deploy
+
+- ✅ UI v3 "Q-Day Observatory" (original design, direction from docs/design/inspiration.md).
+- ✅ User-workflow suite `npm run workflows` — 21/21 against production.
+- ✅ Benchmark vs BitGo, Project Eleven, svanstaa CLI, Quantus, stablepqc — docs/BENCHMARK.md.
+- ✅ Deployed to Vercel: https://shors-reach.vercel.app (frontend + /api/advise + /api/attest). Env: GEMINI_API_KEYS, ADVISOR_MODEL, QORE_ATTESTER_MNEMONIC (Production + Preview). Render not needed — both APIs run as Vercel functions.
+- ✅ Fixes surfaced by testing: BTC scan degrades gracefully; mempool.space → blockstream.info failover; /api/attest bundled (ERR_REQUIRE_ESM in @cosmjs); wallet stack lazy-loaded.
+- ⏳ User-only: real QoreX run on /pass, demo video, submission page, rotate the API keys shared in chat after the hackathon.

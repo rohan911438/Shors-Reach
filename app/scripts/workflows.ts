@@ -150,6 +150,14 @@ console.log(persona);
     const btn = await p.getByRole("button", { name: /Connect QoreX/ }).innerText();
     return `without the extension: "${btn}"`;
   });
+  await step("lazy Connect Wallet button loads the wallet stack and opens the modal", async () => {
+    await p.getByRole("button", { name: "Connect Wallet" }).first().click();
+    await p.getByRole("dialog").waitFor({ timeout: 30_000 });
+    const txt = await p.getByRole("dialog").innerText();
+    expect(/QoreX|Injected|Browser Wallet/i.test(txt), "wallet list");
+    await p.keyboard.press("Escape");
+    return "modal lists: " + txt.replace(/s+/g, " ").slice(0, 60);
+  });
   await step("is offered a QoreX install link", async () => {
     const get = p.getByRole("link", { name: /Get QoreX/ });
     expect(await get.count(), "install link");

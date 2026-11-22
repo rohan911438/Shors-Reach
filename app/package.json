@@ -15,7 +15,8 @@
     "e2e": "tsx scripts/e2e.ts",
     "advise:live": "tsx scripts/advise-live.ts",
     "workflows": "tsx scripts/workflows.ts",
-    "benchmark": "tsx scripts/benchmark.ts"
+    "benchmark": "tsx scripts/benchmark.ts",
+    "build:api": "node scripts/build-api.mjs"
   },
   "dependencies": {
     "@cosmjs/stargate": "^0.39.0",

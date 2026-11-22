@@ -76,24 +76,59 @@ export function fundedCount(info: AddressInfo): number {
   return info.chain_stats.funded_txo_count + info.mempool_stats.funded_txo_count;
 }
 
+/** Same Esplora API, different operator — used when the primary rate-limits or times out. */
+export const FALLBACK_ESPLORA = ["https://blockstream.info/api"];
+
+/** Rate limits, server errors and timeouts are worth retrying elsewhere; a 4xx answer is a real answer. */
+function shouldFailover(err: unknown): boolean {
+  if (err instanceof HttpError) return err.status === 429 || err.status >= 500;
+  return true; // network error / timeout
+}
+
 export class Esplora {
+  private readonly bases: string[];
+  private active = 0;
+
   constructor(
     private readonly net: Net,
-    readonly base: string = DEFAULT_ESPLORA,
-  ) {}
+    base: string = DEFAULT_ESPLORA,
+    fallbacks: string[] = [],
+  ) {
+    this.bases = [base, ...fallbacks.filter((f) => f !== base)];
+  }
+
+  /** The provider currently answering (sticky after a failover). */
+  get base(): string {
+    return this.bases[this.active]!;
+  }
+
+  private async get<T>(path: string): Promise<T> {
+    let lastErr: unknown;
+    for (let i = this.active; i < this.bases.length; i++) {
+      try {
+        const v = await this.net.json<T>({ url: `${this.bases[i]}${path}` });
+        this.active = i;
+        return v;
+      } catch (err) {
+        lastErr = err;
+        if (!shouldFailover(err)) throw err;
+      }
+    }
+    throw lastErr;
+  }
 
   address(addr: string): Promise<AddressInfo> {
-    return this.net.json<AddressInfo>({ url: `${this.base}/address/${addr}` });
+    return this.get<AddressInfo>(`/address/${addr}`);
   }
 
   scripthash(hash: string): Promise<AddressInfo> {
-    return this.net.json<AddressInfo>({ url: `${this.base}/scripthash/${hash}` });
+    return this.get<AddressInfo>(`/scripthash/${hash}`);
   }
 
   /** UTXO list, or null when the server refuses (mempool.space caps at 500 UTXOs). */
   async utxos(addr: string): Promise<Utxo[] | null> {
     try {
-      return await this.net.json<Utxo[]>({ url: `${this.base}/address/${addr}/utxo` });
+      return await this.get<Utxo[]>(`/address/${addr}/utxo`);
     } catch (err) {
       if (err instanceof HttpError && err.status === 400) return null;
       throw err;
@@ -105,13 +140,13 @@ export class Esplora {
    * First page = up to 50 mempool txs + first 25 confirmed; further pages via /txs/chain/{last_txid}.
    */
   async txs(kind: "address" | "scripthash", id: string, maxPages = 4): Promise<Tx[]> {
-    const base = `${this.base}/${kind}/${id}/txs`;
-    const first = await this.net.json<Tx[]>({ url: base });
+    const path = `/${kind}/${id}/txs`;
+    const first = await this.get<Tx[]>(path);
     const all = [...first];
     let confirmed = first.filter((t) => t.status.confirmed);
     for (let page = 1; page < maxPages && confirmed.length >= 25; page++) {
       const last = confirmed[confirmed.length - 1]!.txid;
-      const next = await this.net.json<Tx[]>({ url: `${base}/chain/${last}` });
+      const next = await this.get<Tx[]>(`${path}/chain/${last}`);
       if (next.length === 0) break;
       all.push(...next);
       confirmed = next;

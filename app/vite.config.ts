@@ -48,7 +48,7 @@ function apiDev(env: Record<string, string>): Plugin {
           if (env.QORE_ATTESTER_MNEMONIC) process.env.QORE_ATTESTER_MNEMONIC = env.QORE_ATTESTER_MNEMONIC;
           const chunks: Buffer[] = [];
           for await (const c of req) chunks.push(c as Buffer);
-          const mod = (await server.ssrLoadModule("/api/attest.ts")) as { POST: (r: Request) => Promise<Response> };
+          const mod = (await server.ssrLoadModule("/server/attest.ts")) as { POST: (r: Request) => Promise<Response> };
           const out = await mod.POST(new Request("http://localhost/api/attest", { method: "POST", body: Buffer.concat(chunks) }));
           res.statusCode = out.status;
           res.setHeader("content-type", "application/json");
@@ -74,7 +74,6 @@ export default defineConfig(({ mode }) => {
           // Long-lived vendor chunks: wallet stack and crypto libs change rarely.
           manualChunks(id: string) {
             if (!id.includes("node_modules")) return;
-            if (/@rainbow-me|wagmi|@walletconnect|@reown|@coinbase|@metamask/.test(id)) return "wallet";
             if (/viem|@noble|@scure|abitype|[\\/]ox[\\/]/.test(id)) return "crypto";
             if (/@cosmjs|cosmjs-types|@qorechain|protobufjs|[\\/]long[\\/]/.test(id)) return "cosmos";
             if (/react-dom|[\\/]react[\\/]|scheduler/.test(id)) return "react";

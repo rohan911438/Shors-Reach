@@ -74,11 +74,17 @@ export function AsciiOrb({ points = 900, exposedShare = 0.11 }: { points?: numbe
     let rotY = 0.6;
     let rotX = -0.25;
     let raf = 0;
+    // Lighter on phones / low-core devices: half the glyphs, 30 fps cap; animation starts once the page is idle.
+    const light = window.innerWidth < 760 || (navigator.hardwareConcurrency ?? 8) <= 4;
+    const glyphs = light ? pts.filter((_, i) => i % 2 === 0) : pts;
+    let last = 0;
+    let animate = false;
     const draw = (t: number) => {
-      if (!visible && !still) {
+      if (!still && (!visible || (animate && t - last < 33))) {
         raf = requestAnimationFrame(draw);
         return;
       }
+      last = t;
       rotY += still ? 0 : 0.0022;
       const ry = rotY + mx * 0.35;
       const rx = rotX + my * 0.2;
@@ -92,7 +98,7 @@ export function AsciiOrb({ points = 900, exposedShare = 0.11 }: { points?: numbe
       ctx.font = `500 ${fs}px "JetBrains Mono", monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      for (const p of pts) {
+      for (const p of glyphs) {
         const x1 = p.x * cosY - p.z * sinY;
         const z1 = p.x * sinY + p.z * cosY;
         const y2 = p.y * cosX - z1 * sinX;
@@ -114,12 +120,21 @@ export function AsciiOrb({ points = 900, exposedShare = 0.11 }: { points?: numbe
         }
       }
       ctx.globalAlpha = 1;
-      if (!still) raf = requestAnimationFrame(draw);
+      if (!still && animate) raf = requestAnimationFrame(draw);
     };
-    raf = requestAnimationFrame(draw);
+    raf = requestAnimationFrame(draw); // one static frame right away
+    const start = () => {
+      if (still || animate) return;
+      animate = true;
+      raf = requestAnimationFrame(draw);
+    };
+    const idle = (window as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    const kick = window.setTimeout(() => (idle ? idle(start, { timeout: 2500 }) : start()), 1200);
 
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(kick);
+      animate = false;
       ro.disconnect();
       mo.disconnect();
       io.disconnect();
