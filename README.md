@@ -25,6 +25,9 @@ Entry for the **QoreChain Developer Fest — "Build Before Q-Day"** · Track: **
 4. **QoreChain account check** — is an ML-DSA-87 key registered? Is an EVM window open, and what's the most an attacker could move if ECDSA broke tomorrow?
 5. **Quantum Pass** — a soulbound pass minted only for accounts protected by a registered ML-DSA-87 key, bound on-chain to that key.
 6. **Public counter + share card** — passes, attested exposure buckets, chains; a 1200×675 card with no addresses.
+7. **Ask about your plan** — follow-up Q&A ("why is my Taproot address red?", "what do I do with a Ledger?") on the same anonymised summary; questions containing addresses or seed phrases are refused before any model call; rule-based answers if the model is down.
+8. **Watchlist** — save addresses on your device; every visit re-scans and flags a key revealed by a spend, new funds on an exposed key, a rising score, or funds moved to safety. Optional **email / Telegram alerts** (double opt-in, daily, deleted on unsubscribe).
+9. **Scan API + embeddable widget** — `POST /api/v1/scan` for wallets, exchanges and custodians, and a two-line `<script>` widget that scans in the visitor's browser. Docs and live playground: [#/developers](https://shors-reach.vercel.app/#/developers).
 
 ## Quantum Pass requirements → proof
 
@@ -95,7 +98,7 @@ npm run e2e                         # E2E smoke via your installed Edge/Chrome
 
 ## Privacy
 
-The scan runs in your browser against public APIs; our servers never see what you scan. The AI advisor gets an anonymised summary (formats, verdicts, USD rounded to 2 significant figures) — identifiers are rejected server-side. We never ask for seeds or private keys. Review: [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md).
+The scan runs in your browser against public APIs; our servers never see what you scan. The AI advisor gets an anonymised summary (formats, verdicts, USD rounded to 2 significant figures) — identifiers are rejected server-side. We never ask for seeds or private keys. The watchlist lives in your browser's storage. Two features process an address on our server, both explicitly: the **Scan API** (in memory, never stored or logged) and **opt-in alerts** (stored with your email or Telegram chat id until you unsubscribe). Review: [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md).
 
 ## Limits (honest)
 

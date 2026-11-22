@@ -31,6 +31,12 @@ _Last updated 22 Nov 2026. Competitor facts come only from their public pages or
 | Personalised remediation plan | — (institutional workflow only) | — | — | n/s | — | ✓ AI (anonymised input) + rule-based fallback |
 | Post-quantum protection you can act on today | — | Yellowpages: off-chain PQ binding | — | — | — | ✓ register ML-DSA-87 on QoreChain (hybrid sigs required) |
 | **On-chain verified proof** | — | timestamped proof (off-chain) | — | — | — | ✓ Quantum Pass, ML-DSA-87 checked via precompiles 0x0a01/0x0a02 |
+| Follow-up Q&A on your own result | — | — | — | — | — | ✓ anonymised, guarded, rule-based fallback |
+| Monitoring: alert when a key gets revealed | n/s | n/s | — | — | — | ✓ on-device watchlist + opt-in email/Telegram |
+| API / embeddable widget for wallets & exchanges | n/s | n/s | CLI only | n/s | n/s | ✓ `POST /api/v1/scan` + 2-line widget |
+| Follow-up Q&A on your own result | — | — | — | — | — | ✓ anonymised, guarded, rule-based fallback |
+| Monitoring: alert when a key gets revealed | n/s | n/s | — | — | — | ✓ on-device watchlist + opt-in email/Telegram |
+| API / embeddable widget for wallets & exchanges | n/s | n/s | CLI only | n/s | n/s | ✓ `POST /api/v1/scan` + 2-line widget |
 | Open source | n/s | Yellowpages ✓ (audited) | ✓ | n/s | n/s | ✓ MIT |
 
 **Where others are ahead, honestly:** BitGo brings brand trust and institutional migration tooling. Project Eleven has an audited Bitcoin-native registry and a canonical aggregate tracker. The svanstaa CLI scans the entire UTXO set, which a browser tool cannot. Shor's Reach is a testnet hackathon build. Its pass lives on QoreChain, not on Bitcoin.
@@ -65,7 +71,7 @@ The HD-wallet case (BIP-84 test zpub) is in the script. On 22 Nov, mempool.space
 |---|---|---|
 | User-workflow tests (production) | **21 / 21** steps, 5 personas, live chains + live AI, on shors-reach.vercel.app | `npm run workflows -- <url>` → [reports/workflows-production.md](reports/workflows-production.md) |
 | E2E smoke | 9 / 9 | `npm run e2e` |
-| Unit / engine tests | 116 app + 18 Foundry | `npm test`, `forge test` |
+| Unit / engine tests | 172 app + 18 Foundry | `npm test`, `forge test` |
 | Scan time (live) | genesis key ~7–9 s · Taproot ~2–4 s · EVM 8 chains ~3–6 s · reused P2SH ~10–19 s | benchmark script |
 | AI plan latency (Gemini 3.5 Flash, low thinking) | 5–19 s; rule-based fallback is instant | `npm run advise:live` |
 | Lighthouse, production, desktop | Performance 88 · Accessibility 95 · Best practices 100 · SEO 100 · FCP 0.9 s · LCP 1.4 s · CLS 0.006 | lighthouse 12.6 |

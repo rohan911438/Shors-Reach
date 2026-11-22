@@ -16,7 +16,8 @@
     "advise:live": "tsx scripts/advise-live.ts",
     "workflows": "tsx scripts/workflows.ts",
     "benchmark": "tsx scripts/benchmark.ts",
-    "build:api": "node scripts/build-api.mjs"
+    "build:api": "node scripts/build-api.mjs",
+    "ask:live": "tsx scripts/ask-live.ts"
   },
   "dependencies": {
     "@cosmjs/stargate": "^0.39.0",

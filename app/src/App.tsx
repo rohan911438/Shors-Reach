@@ -5,12 +5,16 @@ import { Home } from "./pages/Home.js";
 import { Icon } from "./components/ui.js";
 import { WalletButton } from "./components/WalletButton.js";
 import { QUANTUM_PASS_ADDRESS } from "./qore/quantumPass.js";
+import { useWatchlist } from "./watch/store.js";
 
 // Landing is eager; every other page is its own chunk.
 const ScanPage = lazy(() => import("./pages/Scan.js").then((m) => ({ default: m.ScanPage })));
 const Plan = lazy(() => import("./pages/Plan.js").then((m) => ({ default: m.Plan })));
 const Pass = lazy(() => import("./pages/Pass.js").then((m) => ({ default: m.Pass })));
 const Dashboard = lazy(() => import("./pages/Dashboard.js").then((m) => ({ default: m.Dashboard })));
+const Embed = lazy(() => import("./pages/Embed.js").then((m) => ({ default: m.Embed })));
+const Watch = lazy(() => import("./pages/Watch.js").then((m) => ({ default: m.Watch })));
+const Developers = lazy(() => import("./pages/Developers.js").then((m) => ({ default: m.Developers })));
 const Methodology = lazy(() => import("./pages/Methodology.js").then((m) => ({ default: m.Methodology })));
 
 function PageLoading() {
@@ -24,13 +28,18 @@ function PageLoading() {
 const NAV: { label: string; route: Route; match: Route["name"][] }[] = [
   { label: "Scan", route: { name: "home" }, match: ["home", "scan"] },
   { label: "Plan", route: { name: "plan" }, match: ["plan"] },
+  { label: "Watchlist", route: { name: "watch" }, match: ["watch"] },
   { label: "Quantum Pass", route: { name: "pass" }, match: ["pass"] },
   { label: "Dashboard", route: { name: "dashboard" }, match: ["dashboard"] },
   { label: "Methodology", route: { name: "methodology" }, match: ["methodology"] },
+  { label: "API", route: { name: "developers" }, match: ["developers"] },
 ];
 
 function useTheme(): [string, () => void] {
   const [theme, setTheme] = useState<string>(() => {
+    // Embeds pass ?theme=light|dark from the host page.
+    const forced = new URLSearchParams(window.location.search).get("theme");
+    if (forced === "light" || forced === "dark") return forced;
     try {
       return localStorage.getItem("theme") ?? "";
     } catch {
@@ -41,7 +50,7 @@ function useTheme(): [string, () => void] {
     if (theme) document.documentElement.dataset.theme = theme;
     else delete document.documentElement.dataset.theme;
     try {
-      if (theme) localStorage.setItem("theme", theme);
+      if (theme && !new URLSearchParams(window.location.search).has("theme")) localStorage.setItem("theme", theme);
     } catch {
       /* storage unavailable */
     }
@@ -69,11 +78,20 @@ export function App() {
   const [theme, toggleTheme] = useTheme();
   const scrolled = useScrolled();
   const [menu, setMenu] = useState(false);
+  const unread = useWatchlist().reduce((n, i) => n + i.unread, 0);
   useEffect(() => {
     setMenu(false);
     window.scrollTo({ top: 0 });
   }, [route.name]);
   const dark = theme ? theme === "dark" : typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+  // Embeddable widget (iframe): no site chrome.
+  if (route.name === "embed")
+    return (
+      <Suspense fallback={null}>
+        <Embed input={route.input} />
+      </Suspense>
+    );
 
   return (
     <>
@@ -92,7 +110,13 @@ export function App() {
             {NAV.map((n, i) => (
               <a key={n.label} href={href(n.route)} aria-current={n.match.includes(route.name) ? "page" : undefined}>
                 {n.label}
-                <sup>0{i + 1}</sup>
+                {n.route.name === "watch" && unread > 0 ? (
+                  <span className="nav-badge" aria-label={`${unread} new alerts`}>
+                    {unread}
+                  </span>
+                ) : (
+                  <sup>0{i + 1}</sup>
+                )}
               </a>
             ))}
           </nav>
@@ -128,6 +152,8 @@ export function App() {
           {route.name === "plan" && <Plan />}
           {route.name === "pass" && <Pass />}
           {route.name === "dashboard" && <Dashboard />}
+          {route.name === "watch" && <Watch />}
+          {route.name === "developers" && <Developers />}
           {route.name === "methodology" && <Methodology anchor={route.anchor} />}
         </Suspense>
       </main>

@@ -3,16 +3,52 @@
   "framework": "vite",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/lcd-testnet/:path*", "destination": "https://api-testnet.qore.host/:path*" }],
-  "functions": { "api/attest.js": { "maxDuration": 60 }, "api/advise.ts": { "maxDuration": 60 } },
+  "rewrites": [
+    {
+      "source": "/lcd-testnet/:path*",
+      "destination": "https://api-testnet.qore.host/:path*"
+    }
+  ],
+  "functions": {
+    "api/attest.js": {
+      "maxDuration": 60
+    },
+    "api/advise.ts": {
+      "maxDuration": 60
+    },
+    "api/ask.ts": {
+      "maxDuration": 60
+    },
+    "api/alerts.ts": {
+      "maxDuration": 300
+    },
+    "api/v1/scan.ts": {
+      "maxDuration": 60
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Referrer-Policy", "value": "no-referrer" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/alerts?action=cron",
+      "schedule": "0 8 * * *"
     }
   ]
 }

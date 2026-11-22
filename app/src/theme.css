@@ -1338,3 +1338,81 @@ main > :first-child:not(.home) {
 .scanbox input {
   text-align: left;
 }
+
+/* ---------------------------------------------------------------- Ask panel */
+.ask-log { display: grid; gap: 14px; margin-top: 16px; }
+.ask-turn { display: grid; gap: 8px; }
+.ask-q { justify-self: end; max-width: 80%; background: var(--accent); color: var(--lime-ink); padding: 9px 14px; border-radius: 14px 14px 4px 14px; font-weight: 500; }
+.ask-a { max-width: 92%; background: var(--surface-2); border: 1px solid var(--border); padding: 12px 16px; border-radius: 14px 14px 14px 4px; }
+.ask-a p { margin: 0 0 8px; }
+.ask-a p:last-of-type { margin-bottom: 4px; }
+.ask-src { font-size: 11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
+.ask .chip:disabled { opacity: .5; cursor: default; }
+.ask-box::before { content: "?"; }
+
+/* ---------------------------------------------------------------- Watchlist */
+.notice.warn { border-color: color-mix(in srgb, #ffb020 40%, transparent); background: color-mix(in srgb, #ffb020 9%, transparent); }
+.link-btn { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.link-btn:hover { color: var(--text); }
+.link-btn.danger { color: var(--danger); }
+.row > .spacer { flex: 1; }
+.w-add-row { display: grid; grid-template-columns: 1fr 200px auto; gap: 10px; }
+.w-add input, .w-rename, .w-alerts-form input, .w-alerts-form select {
+  background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text);
+  border-radius: 12px; padding: 11px 14px; font: inherit; min-width: 0; width: 100%;
+}
+.w-add input:focus, .w-alerts-form input:focus, .w-alerts-form select:focus, .w-rename:focus { outline: none; border-color: var(--accent); }
+.w-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 16px; margin-top: 20px; }
+.w-item.has-unread { border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
+.w-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.w-input { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 4px; }
+.w-score { text-align: right; white-space: nowrap; }
+.w-score b { font: 600 34px/1 var(--font-display); }
+.w-score b.danger { color: var(--danger); }
+.w-score b.ok { color: var(--accent); }
+.w-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; font-size: 14px; }
+.w-changes { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 10px; }
+.w-change { display: grid; grid-template-columns: 10px 1fr; gap: 10px; font-size: 14px; }
+.w-change .w-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--danger); box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 18%, transparent); }
+.w-change.good .w-dot { background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+.w-alerts-form { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 12px; align-items: end; }
+.w-alerts-form label { display: grid; gap: 6px; font-size: 13px; }
+.w-alerts-form fieldset { border: 0; padding: 0; margin: 0; display: flex; gap: 14px; align-items: center; }
+.w-alerts-form legend { font-size: 13px; margin-bottom: 6px; }
+.w-alerts-form .radio { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.w-alerts-form .radio input { width: auto; }
+.nav-badge { display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 5px; margin-left: 4px; border-radius: 99px; background: var(--danger); color: #fff; font: 600 10px/1 var(--font-mono); vertical-align: 2px; }
+@media (max-width: 760px) {
+  .w-add-row, .w-alerts-form { grid-template-columns: 1fr; }
+}
+
+/* ---------------------------------------------------------------- Embed (widget iframe) */
+html.embed-mode, html.embed-mode body { background: transparent; }
+html.embed-mode body::before, html.embed-mode body::after { display: none; }
+.embed { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 16px; padding: 14px 16px; font-size: 14px; color: var(--text); }
+.embed-head { display: flex; align-items: center; gap: 8px; font-size: 13px; letter-spacing: .01em; }
+.embed-head .brand-mark { width: 22px; height: 22px; font-size: 13px; }
+.embed-form { display: flex; gap: 8px; margin-top: 10px; }
+.embed-form input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text); border-radius: 10px; padding: 9px 12px; font-size: 13px; }
+.embed-form input:focus { outline: none; border-color: var(--accent); }
+.embed-body { margin-top: 10px; }
+.embed-verdict { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.embed-score b { font: 600 26px/1 var(--font-display); margin-right: 3px; }
+.embed-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; }
+.embed-foot a { color: var(--accent); text-decoration: none; }
+.embed-foot a.faint { color: var(--faint); }
+
+/* ---------------------------------------------------------------- Developers */
+.dev-h2 { font: 600 clamp(26px, 3.4vw, 38px)/1.1 var(--font-display); margin: 44px 0 14px; letter-spacing: -0.02em; }
+.dev-choices { margin-top: 8px; }
+.dev-list { padding-left: 18px; margin: 0; display: grid; gap: 4px; font-size: 14px; }
+.dev-code { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-top: 16px; min-width: 0; }
+.dev-code-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.dev-code pre { margin: 0; padding: 14px; font-size: 12.5px; line-height: 1.55; overflow-x: auto; white-space: pre; }
+.dev-out { max-height: 420px; overflow: auto; }
+.dev-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.dev-table th, .dev-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.dev-table th { color: var(--faint); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.dev-widgets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 18px; }
+.compact-pg input { text-align: left; }
+.grid-2 > .dev-code { margin-top: 0; }

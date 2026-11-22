@@ -24,6 +24,7 @@ const reportPath = args.includes("--report") ? args[args.indexOf("--report") + 1
 const GENESIS =
   "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f";
 const VITALIK = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+const TAPROOT = "bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297";
 const XPUB = "zpub6rFR7y4Q2AijBEqTUquhVz398htDFrtymD9xYYfG1m4wAcvPhXNfE3EfH1r1ADqtfSdVCToUG868RvUUkgDKf31mGDtKsAYz2oz2AGutZYs";
 
 type Row = { persona: string; step: string; ok: boolean; ms: number; note?: string };
@@ -112,11 +113,25 @@ console.log(persona);
   await step("gets a plan from the advisor", async () => {
     await p.goto(`${BASE}/#/plan`);
     const badge = p.getByText(/AI-generated|Rule-based plan/).first();
-    await badge.waitFor({ timeout: 90_000 });
+    await badge.waitFor({ timeout: 150_000 });
     const label = await badge.innerText();
     const actions = await p.locator(".stepper .s").count();
     expect(actions >= 1, "plan has actions");
     return `${label} · ${actions} actions`;
+  });
+  await step("asks a follow-up question about the plan", async () => {
+    await p.locator(".ask .chip").first().click();
+    await p.locator(".ask-a p").first().waitFor({ timeout: 90_000 });
+    const a = await p.locator(".ask-a").first().innerText();
+    expect(a.length > 40, "answer too short");
+    return (await p.locator(".ask-src").first().innerText()) + " · " + a.replace(/\s+/g, " ").slice(0, 70) + "…";
+  });
+  await step("an address pasted into a question is refused locally", async () => {
+    await p.locator("#ask-input").fill("is 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa safe?");
+    await p.getByRole("button", { name: "Ask", exact: true }).click();
+    const err = await p.locator(".ask .input-error").innerText();
+    expect(/without pasting addresses/.test(err), "no refusal");
+    expect((await p.locator(".ask-turn").count()) === 1, "question was sent");
   });
   await step("inspects exactly what the advisor saw (no identifiers)", async () => {
     await p.getByRole("button", { name: "Show raw JSON" }).click();
@@ -244,6 +259,120 @@ console.log(persona);
   await step("a shared deep link to a scan restores the results", async () => {
     await p.goto(`${BASE}/#/scan/${GENESIS}`);
     await waitResults(p);
+  });
+  await p.context().close();
+}
+
+// ------------------------------------------------------------------ F
+persona = "F. Partner developer (wallet / exchange)";
+console.log(persona);
+{
+  const p = await newPage();
+  await step("API answers a CORS preflight and a scan from a foreign origin", async () => {
+    const pre = await fetch(`${BASE}/api/v1/scan`, { method: "OPTIONS", headers: { origin: "https://wallet.example", "access-control-request-method": "POST" } });
+    expect(pre.status === 204 && pre.headers.get("access-control-allow-origin") === "*", `preflight ${pre.status}`);
+    const res = await fetch(`${BASE}/api/v1/scan`, { method: "POST", headers: { "content-type": "application/json", origin: "https://wallet.example" }, body: JSON.stringify({ input: TAPROOT }) });
+    const b = (await res.json()) as { verdict?: string; holdings?: { evidenceUrl: string | null; status: string }[] };
+    expect(res.status === 200 && b.verdict === "exposed", `scan ${res.status} ${b.verdict}`);
+    expect(b.holdings!.filter((h) => h.status === "EXPOSED_NOW").every((h) => h.evidenceUrl), "exposed row without evidence");
+    return `verdict=${b.verdict}, ${b.holdings!.length} holding(s)`;
+  });
+  await step("API refuses a seed phrase and a GET with the input in the URL", async () => {
+    const seed = await fetch(`${BASE}/api/v1/scan`, { method: "POST", body: JSON.stringify({ input: "abandon ability able about above absent absorb abstract absurd abuse access accident" }) });
+    expect(seed.status === 400 && ((await seed.json()) as { code: string }).code === "seed-phrase", "seed not refused");
+    expect((await fetch(`${BASE}/api/v1/scan?input=${TAPROOT}`)).status === 405, "GET allowed");
+  });
+  await step("reads the developer docs and runs the playground", async () => {
+    await p.goto(`${BASE}/#/developers`);
+    await p.getByRole("heading", { name: /where users already are/ }).waitFor();
+    await p.getByRole("button", { name: /POST \/api\/v1\/scan/ }).click();
+    await p.getByTestId("pg-out").waitFor({ timeout: 90_000 });
+    const meta = await p.getByTestId("pg-meta").innerText();
+    expect(/HTTP 200/.test(meta), meta);
+    expect((await p.getByTestId("pg-out").innerText()).includes('"verdict": "exposed"'), "no verdict");
+    return meta;
+  });
+  await step("the embedded widget scans in its iframe and emits shorsreach:result", async () => {
+    const frame = p.frameLocator("[data-shors-reach][data-input] iframe");
+    await frame.locator(".embed-verdict .pill").waitFor({ timeout: 90_000 });
+    const pill = await frame.locator(".embed-verdict .pill").innerText();
+    await p.getByTestId("widget-event").filter({ hasText: "verdict" }).waitFor({ timeout: 30_000 });
+    const ev = await p.getByTestId("widget-event").innerText();
+    const h = await p.locator("[data-shors-reach][data-input] iframe").evaluate((f) => (f as HTMLIFrameElement).getBoundingClientRect().height);
+    expect(h > 120, `iframe not resized (${h})`);
+    return `${pill} · ${ev.replace("shorsreach:result → ", "")}`;
+  });
+  await step("input-mode widget (light theme) accepts an address", async () => {
+    const frame = p.frameLocator("[data-shors-reach]:not([data-input]) iframe");
+    await frame.locator("#embed-input").fill(VITALIK);
+    await frame.getByRole("button", { name: "Check" }).click();
+    await frame.locator(".embed-verdict .pill").waitFor({ timeout: 90_000 });
+    expect((await frame.locator("html").getAttribute("data-theme")) === "light", "theme not applied");
+    return await frame.locator(".embed-verdict .pill").innerText();
+  });
+  await p.context().close();
+}
+
+// ------------------------------------------------------------------ G
+persona = "G. Watchlist user";
+console.log(persona);
+{
+  const p = await newPage();
+  await step("scans a Taproot address and presses '+ Watch'", async () => {
+    await p.goto(`${BASE}/#/scan/${TAPROOT}`);
+    await waitResults(p);
+    await p.getByRole("button", { name: "+ Watch" }).click();
+    await p.getByRole("link", { name: "✓ Watching" }).waitFor();
+  });
+  await step("the watchlist shows it with a score, and survives a reload", async () => {
+    await p.goto(`${BASE}/#/watch`);
+    await p.locator(".w-item").first().waitFor();
+    await p.reload();
+    await p.locator(".w-item").first().waitFor();
+    const score = await p.locator(".w-score b").first().innerText();
+    expect(/^\d+$/.test(score), `score ${score}`);
+    return `score ${score}`;
+  });
+  await step("'Check now' re-scans and reports no changes", async () => {
+    await p.locator(".w-item").first().getByRole("button", { name: "Check now" }).click();
+    await p.locator(".w-item").first().getByText("just now").waitFor({ timeout: 90_000 });
+    await p.locator(".w-item").first().getByText("No changes since you started watching.").waitFor();
+  });
+  await step("a revealed key since the last visit raises an alert and a nav badge", async () => {
+    // Simulate the previous visit: same holdings, but still hidden behind a hash.
+    await p.evaluate((key) => {
+      const items = JSON.parse(localStorage.getItem(key) ?? "[]");
+      const it = items[0];
+      it.snapshot.holdings = it.snapshot.holdings.map((h: { status: string }) => ({ ...h, status: "EXPOSED_ON_SPEND" }));
+      it.snapshot.score = 0;
+      it.checkedAt = new Date(Date.now() - 3_600_000).toISOString();
+      it.changes = [];
+      it.unread = 0;
+      localStorage.setItem(key, JSON.stringify(items));
+    }, "shors-reach.watchlist.v1");
+    await p.reload();
+    await p.locator(".w-change").filter({ hasText: "A key was revealed" }).first().waitFor({ timeout: 90_000 });
+    const badge = await p.locator(".nav-badge").innerText();
+    expect(Number(badge) >= 1, "no badge");
+    await p.getByRole("button", { name: "Mark all read" }).click();
+    expect((await p.locator(".nav-badge").count()) === 0, "badge stays");
+    return `badge ${badge}`;
+  });
+  await step("the alerts section is honest about what's enabled", async () => {
+    const box = p.locator(".w-alerts");
+    await box.locator(".notice, form").first().waitFor({ timeout: 30_000 });
+    if (await box.locator("form").count()) {
+      await box.locator('input[type="email"]').fill("watch-test@example.com");
+      await box.getByRole("button", { name: /confirmation email/ }).click();
+      await box.getByText("Check your inbox to confirm.").waitFor({ timeout: 30_000 });
+      return "enabled: confirmation email requested";
+    }
+    expect(/switched on/.test(await box.locator(".notice").innerText()), "no disabled notice");
+    return "disabled on this deployment (notice shown)";
+  });
+  await step("removes the entry", async () => {
+    await p.locator(".w-item").first().getByRole("button", { name: "Remove" }).click();
+    await p.getByText("Nothing watched yet").waitFor();
   });
   await p.context().close();
 }

@@ -10,6 +10,9 @@ export type Route =
   | { name: "plan" }
   | { name: "pass" }
   | { name: "dashboard" }
+  | { name: "watch" }
+  | { name: "developers" }
+  | { name: "embed"; input: string }
   | { name: "methodology"; anchor?: string };
 
 export function parseHash(hash: string): Route {
@@ -24,6 +27,12 @@ export function parseHash(hash: string): Route {
       return { name: "pass" };
     case "dashboard":
       return { name: "dashboard" };
+    case "watch":
+      return { name: "watch" };
+    case "developers":
+      return { name: "developers" };
+    case "embed":
+      return { name: "embed", input: decodeURIComponent(rest.join("/")) };
     case "methodology":
       return { name: "methodology", anchor: rest[0] ? decodeURIComponent(rest[0]) : undefined };
     default:
@@ -37,6 +46,8 @@ export function href(route: Route): string {
       return "#/";
     case "scan":
       return `#/scan/${encodeURIComponent(route.input)}`;
+    case "embed":
+      return route.input ? `#/embed/${encodeURIComponent(route.input)}` : "#/embed";
     case "methodology":
       return route.anchor ? `#/methodology/${encodeURIComponent(route.anchor)}` : "#/methodology";
     default:
