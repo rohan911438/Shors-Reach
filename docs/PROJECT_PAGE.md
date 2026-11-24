@@ -34,5 +34,5 @@ Shor's Reach scans Bitcoin, 7 EVM chains and QoreChain at the key level — not 
 ## Links
 
 - Repo: https://github.com/rohan911438/Shors-Reach
-- Live demo: _Vercel URL_
+- Live demo: https://shors-reach.vercel.app
 - Video: _link_

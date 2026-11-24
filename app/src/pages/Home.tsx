@@ -5,6 +5,29 @@ import { CountUp, Icon, useReveal } from "../components/ui.js";
 import { AsciiOrb, PassCard, StoryVisual } from "../components/visuals.js";
 import { usd } from "../lib/format.js";
 import { usePassStats } from "../lib/passStats.js";
+import { COINGECKO } from "../scan/price/coingecko.js";
+
+/** BTC sitting behind public keys already on-chain (Glassnode, Oct 2026). */
+const EXPOSED_BTC = 6_300_000;
+
+/** Live BTC/USD for the ticker; null until loaded or on failure (then only BTC is shown). */
+function useBtcPrice(): number | null {
+  const [p, setP] = useState<number | null>(null);
+  useEffect(() => {
+    let on = true;
+    fetch(`${COINGECKO}?ids=bitcoin&vs_currencies=usd`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { bitcoin?: { usd?: number } } | null) => {
+        const v = d?.bitcoin?.usd;
+        if (on && typeof v === "number" && v > 0) setP(v);
+      })
+      .catch(() => {});
+    return () => {
+      on = false;
+    };
+  }, []);
+  return p;
+}
 
 const STORY = [
   {
@@ -92,11 +115,19 @@ function Story() {
 
 export function Home() {
   const stats = usePassStats();
+  const btcPrice = useBtcPrice();
   useReveal();
   const ticker = (
     <>
       <span>
-        <b className="r">~6.3M BTC</b> behind exposed keys
+        <b className="r">6.3 million BTC</b>
+        {btcPrice ? (
+          <>
+            {" "}
+            (≈ <b className="r">{usd(EXPOSED_BTC * btcPrice, { compact: true })}</b>)
+          </>
+        ) : null}{" "}
+        behind exposed keys
       </span>
       <span>
         <b>7</b> address forms per key
