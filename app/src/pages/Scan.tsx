@@ -63,6 +63,15 @@ function Results({ result }: { result: ScanResult }) {
   const priced = STATUSES.reduce((a, k) => a + t.usd[k], 0);
   const exposedNow = t.usd.EXPOSED_NOW;
   const visible = result.holdings.filter((h) => !h.details?.zeroBalance);
+  // The same exposure in coins (e.g. "57.72 BTC"), so the dollar figure is never read as the coin count.
+  const exposedCoins = Object.entries(
+    visible
+      .filter((h) => h.status === "EXPOSED_NOW")
+      .reduce<Record<string, number>>((a, h) => ({ ...a, [h.asset]: (a[h.asset] ?? 0) + Number(h.amount) }), {}),
+  )
+    .filter(([, n]) => n > 0)
+    .map(([asset, n]) => `${n.toLocaleString("en-US", { maximumFractionDigits: n >= 1 ? 2 : 6 })} ${asset}`)
+    .join(" + ");
   const zero = result.holdings.filter((h) => h.details?.zeroBalance);
   const failed = result.sources.filter((x) => !x.ok);
   const hasUnknownOffchain = result.holdings.some((h) => h.reason === "evm-offchain-signature-possible");
@@ -79,6 +88,11 @@ function Results({ result }: { result: ScanResult }) {
             <div className={`big-num ${incomplete ? "unknown" : exposedNow === 0 && t.count.EXPOSED_NOW === 0 ? "safe" : ""}`}>
               {incomplete ? "Unknown" : result.scoreBasis === "usd" ? usd(exposedNow, { compact: true }) : `${t.count.EXPOSED_NOW} holding${t.count.EXPOSED_NOW === 1 ? "" : "s"}`}
             </div>
+            {!incomplete && result.scoreBasis === "usd" && exposedCoins && (
+              <div className="mono" style={{ fontSize: 18, marginTop: 6 }}>
+                = {exposedCoins}
+              </div>
+            )}
             <p className="muted" style={{ marginTop: 12 }}>
               {incomplete
                 ? `We couldn't reach ${failed.map((f) => f.source).join(", ")}. Nothing here means safe — please retry in a minute.`
