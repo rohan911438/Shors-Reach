@@ -18,7 +18,7 @@
 
 [**Project page**](https://build.qorechain.io/p/shor-s-reach) · [**Live demo**](https://shors-reach.vercel.app) · [**Demo video**](https://youtu.be/4W-PkwzndHk) · [**Contract**](https://explore.qore.network/address/0x4f54b69693458523223504b48fa7cd44657a56df) · [**Scan API docs**](https://shors-reach.vercel.app/#/developers) · [**Methodology**](https://shors-reach.vercel.app/#/methodology) · [**Telegram bot**](https://t.me/ShorsReachBot)
 
-*Entry for the **QoreChain Developer Fest — "Build Before Q-Day"** · Track: **Quantum Pass** · also applying: **Best AI-Native Build**, **People's Choice***
+*Entry for the **QoreChain Developer Fest — "Build Before Q-Day"** · Main track: **Quantum Pass** · Awards: **Best AI-Native Build** · **People's Choice** · **Quantum Campus** · **Regional (India · Asia-Pacific)***
 
 </div>
 
@@ -37,7 +37,7 @@
 9. [How the Quantum Pass works](#how-the-quantum-pass-works)
 10. [AI advisor pipeline](#ai-advisor-pipeline)
 11. [Privacy model](#privacy-model)
-12. [Quantum Pass track requirements → proof](#quantum-pass-track-requirements--proof)
+12. [Tracks and awards](#tracks-and-awards)
 13. [On-chain deployments and transactions](#on-chain-deployments-and-transactions)
 14. [Tech stack](#tech-stack)
 15. [Repository layout](#repository-layout)
@@ -379,7 +379,32 @@ flowchart LR
 
 ---
 
-## Quantum Pass track requirements → proof
+## Tracks and awards
+
+Shor's Reach is entered in **one main track** and applies for **every special award it qualifies for**. Each one below lists what it asks for and where to find the proof.
+
+| # | Track / award | Type | Status | Why we fit |
+|---|---|---|---|---|
+| 1 | 🎖️ **Quantum Pass** | Main track | ✅ Entered — all requirements met | "PQC checker" is a named example in the brief, and the *pass* is literally what we mint |
+| 2 | 🤖 **Best AI-Native Build** | Special award | ✅ Applied — AI-Native verified on the project page | AI is a core feature, not decoration; the build process is documented in [AI_USAGE.md](AI_USAGE.md) |
+| 3 | 📣 **People's Choice** | Special award | ✅ Applied | A personal "$X exposed" result and an address-free share card make it naturally shareable |
+| 4 | 🎓 **Quantum Campus** | Special award | ✅ Applied | Every team member is a student |
+| 5 | 🌏 **Regional Award** | Special award | ✅ Applied — India · Asia-Pacific | Team region |
+| 6 | 🏅 **Top-Quality Award** / Quantum Pass raffle | Automatic | ✅ Eligible | Every submission check passed; tests, CI, live demo, honest limits |
+
+```mermaid
+flowchart LR
+    SR["🛡️ Shor's Reach"] --> QP["🎖️ Quantum Pass<br/>main track"]
+    SR --> AI["🤖 Best AI-Native Build"]
+    SR --> PC["📣 People's Choice"]
+    SR --> QC["🎓 Quantum Campus"]
+    SR --> RG["🌏 Regional<br/>India · Asia-Pacific"]
+    QP -.-> TQ["🏅 Top-Quality /<br/>Quantum Pass raffle"]
+```
+
+### 1. 🎖️ Quantum Pass — main track
+
+> *"Build a small original QoreChain app, tool, game or bot. Use create-qorechain-dapp, connect QoreX, deploy on testnet and complete one hybrid-signed transaction."*
 
 | Requirement | How | Proof |
 |---|---|---|
@@ -389,7 +414,46 @@ flowchart LR
 | Hybrid-signed transaction | Native txs carry `/qorechain.pqc.v1.PQCHybridSignature` (secp256k1 + ML-DSA-87) | EVM window `82CAAC03…1104`, `C584F991…3972`; pass proof `926E749D…E55F` |
 | On-chain PQ verification | `mint()` verifies ML-DSA-87 with `pqcVerify` (0x0a01) against the key from `pqcKeyStatus` (0x0a02) | Self-mint `0xb6ac662a…a38d` |
 
+**Beyond the minimum:** the pass goes further than one hybrid transaction. It is soulbound, bound to the hash of the registered ML-DSA-87 key, and can be minted with the signature verified **fully on-chain** through the `pqcVerify` / `pqcKeyStatus` precompiles. Verified on the project page: QoreChain SDK, QoreX integrations, hybrid ML-DSA-87 transactions, PQC key registration with proof of possession, EVM window.
+
 Track mapping in detail: [docs/tracks/01-quantum-pass-main-track.md](docs/tracks/01-quantum-pass-main-track.md)
+
+### 2. 🤖 Best AI-Native Build
+
+> *Built with AI tools, documented in an `AI_USAGE.md` file in the repo.*
+
+| What judges look for | Shor's Reach |
+|---|---|
+| AI in the product, not just the pitch | The **AI advisor** turns a multi-chain exposure report into a calm, prioritised plan, and **Ask about your plan** answers follow-up questions — both live at [#/plan](https://shors-reach.vercel.app/#/plan) |
+| Responsible AI | Anonymised input only (no addresses, txids, xpubs or exact amounts), leak filters both ways, never asks for seeds or keys, no date predictions, users see exactly what was sent |
+| Engineered, not bolted on | JSON-schema output validated with zod, low-latency Flash model, key rotation, one retry then a deterministic rule-based fallback — the user always gets a plan |
+| AI-native build process | 13 gated prompts with validation gates ([docs/prompts](docs/prompts)), live on-chain verification, progress log ([PROGRESS.md](docs/prompts/PROGRESS.md)) |
+| Documentation | [AI_USAGE.md](AI_USAGE.md) — principles, pipeline, optimisations, failure modes, division of labour, evidence index |
+
+### 3. 📣 People's Choice
+
+| Built for sharing | Details |
+|---|---|
+| A result people want to post | Every scan ends in a headline: how much of your crypto is exposed now, in BTC and USD |
+| Share card | 1200×675 image with the score and buckets — **no addresses** — ready for X with **#BuildBeforeQDay** |
+| Public counter | [Dashboard](https://shors-reach.vercel.app/#/dashboard): passes minted, attested exposure buckets, chains |
+| Zero friction | No sign-up, no wallet needed to scan; one link: [shors-reach.vercel.app](https://shors-reach.vercel.app) |
+
+**Vote:** open the [project page](https://build.qorechain.io/p/shor-s-reach) during the voting window and support Shor's Reach with QoreX.
+
+### 4. 🎓 Quantum Campus
+
+Built by a student team, start to finish. Proof of enrolment is provided to the organisers as the rules require.
+
+### 5. 🌏 Regional Award — India · Asia-Pacific
+
+Built in **India** for the **Asia-Pacific** region. Quantum risk is global — the scanner covers Bitcoin, 7 EVM chains and QoreChain, works in any browser, and needs no account.
+
+### 6. 🏅 Automatic eligibility
+
+Every submission check is designed to pass: public MIT repo, video ≤ 3 min, live demo, testnet contract and hybrid transactions, verified kits. That keeps Shor's Reach eligible for the **Quantum Pass raffle** and the **Top-Quality Award** (both are fallbacks for passing projects that don't win a jury prize; Regional works the same way).
+
+All awards in detail: [docs/tracks/02-side-awards.md](docs/tracks/02-side-awards.md)
 
 ---
 
