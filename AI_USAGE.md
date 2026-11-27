@@ -98,8 +98,10 @@ Every choice below was made to keep the advisor **fast, cheap, reliable and priv
 | **Native JSON-schema output** | The model is constrained to the exact response shape. No regex parsing, almost no malformed answers, and the UI renders actions directly. |
 | **Compact input** | Rounded numbers and reason codes instead of raw scan data keep prompts small — lower cost, lower latency, and nothing sensitive to leak. |
 | **Key rotation** | `GEMINI_API_KEYS` takes several keys; on 401 / 403 / 429 the client moves to the next one, so one rate-limited key doesn't take the feature down. |
+| **Model fallback chain** | If `gemini-3.5-flash` is overloaded (503), missing or slower than 15 s, the request moves to `gemini-3.5-flash-lite`, then `gemini-3-flash-preview` (configurable with `ADVISOR_FALLBACK_MODELS`). Found and fixed in production during a Google capacity spike: every request still got an AI answer. |
+| **Hard time budget** | The whole AI call has a 45 s budget inside Vercel's 60 s limit, so the server always has time to return the rule-based plan instead of a timeout. |
 | **One retry, then fallback** | A single retry absorbs transient failures; beyond that the user gets the rule-based plan immediately instead of waiting. |
-| **60 s timeout + rate limit + 20 KB body cap** | Bounded cost per request and protection against abuse of a public endpoint. |
+| **Per-call timeout + rate limit + 32 KB body cap** | Bounded cost per request and protection against abuse of a public endpoint. |
 | **Shared summary for plan and Q&A** | Follow-up questions reuse the same anonymised summary — no new data collection, consistent answers. |
 | **Works without AI** | Static hosting or no keys → the full app still works with the rule-based plan, so judges and users are never blocked. |
 
@@ -118,7 +120,8 @@ Every choice below was made to keep the advisor **fast, cheap, reliable and priv
 |---|---|
 | No API key configured / static hosting | Rule-based plan, labelled as such |
 | Gemini returns 401 / 403 / 429 | Next key in the rotation; if all fail → rule-based plan |
-| Timeout or network error | One retry, then rule-based plan |
+| Model overloaded (503) or slow | Next model in the fallback chain, within the 45 s budget |
+| Timeout or network error | Next model; if the budget runs out → rule-based plan |
 | Malformed or truncated JSON | Rejected by zod → retry → rule-based plan |
 | Model refuses | Rule-based plan |
 | Model output contains an identifier or asks for a seed | Rejected → retry → rule-based plan |
