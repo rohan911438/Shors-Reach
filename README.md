@@ -350,7 +350,7 @@ flowchart LR
     FB --> P
 ```
 
-How AI was used to **build** the project (Claude Code, gated P01→P13 plan) and how AI runs **inside** the product: [AI_USAGE.md](AI_USAGE.md) · [docs/architecture/06-ai-advisor.md](docs/architecture/06-ai-advisor.md)
+How AI runs **inside** the product and how it was used to **build** it through a gated, verification-first 13-step plan: [AI_USAGE.md](AI_USAGE.md) · [docs/architecture/06-ai-advisor.md](docs/architecture/06-ai-advisor.md)
 
 ---
 
