@@ -31,7 +31,7 @@ There is no submit button: the project page freezes at the deadline. **Target: e
 - [ ] Description + "How it's made"
 - [ ] Kits + network features ticked (only ones really used)
 - [ ] "AI-native" option ticked
-- [ ] Video ≤ 3:00 (YouTube/unlisted or as the form asks)
+- [x] Video ≤ 3:00 (YouTube/unlisted or as the form asks) — https://youtu.be/4W-PkwzndHk
 - [ ] Cover 16:9, ≥1200×675, ≤5 MB
 - [ ] Testnet address(es)
 

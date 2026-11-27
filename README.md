@@ -7,7 +7,7 @@
 
 Entry for the **QoreChain Developer Fest — "Build Before Q-Day"** · Track: **Quantum Pass** · also applying: Best AI-Native Build, People's Choice.
 
-**Live demo:** [shors-reach.vercel.app](https://shors-reach.vercel.app) · **Video:** _to be added_ · **Cover:** [docs/cover.png](docs/cover.png) · **Contract:** [`0x4f54…56df` on qorechain-diana](https://explore.qore.network/address/0x4f54b69693458523223504b48fa7cd44657a56df)
+**Live demo:** [shors-reach.vercel.app](https://shors-reach.vercel.app) · **Video:** [youtu.be/4W-PkwzndHk](https://youtu.be/4W-PkwzndHk) · **Cover:** [docs/cover.png](docs/cover.png) · **Contract:** [`0x4f54…56df` on qorechain-diana](https://explore.qore.network/address/0x4f54b69693458523223504b48fa7cd44657a56df)
 
 ---
 

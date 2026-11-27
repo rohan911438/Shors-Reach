@@ -29,7 +29,8 @@ Legend: ⬜ not started · 🟨 in progress · 🟥 gate failed · ✅ done
 - ✅ Benchmark vs BitGo, Project Eleven, svanstaa CLI, Quantus, stablepqc — docs/BENCHMARK.md.
 - ✅ Deployed to Vercel: https://shors-reach.vercel.app (frontend + /api/advise + /api/attest). Env: GEMINI_API_KEYS, ADVISOR_MODEL, QORE_ATTESTER_MNEMONIC (Production + Preview). Render not needed — both APIs run as Vercel functions.
 - ✅ Fixes surfaced by testing: BTC scan degrades gracefully; mempool.space → blockstream.info failover; /api/attest bundled (ERR_REQUIRE_ESM in @cosmjs); wallet stack lazy-loaded.
-- ⏳ User-only: real QoreX run on /pass, demo video, submission page, rotate the API keys shared in chat after the hackathon.
+- ✅ Demo video uploaded: https://youtu.be/4W-PkwzndHk (linked in README + PROJECT_PAGE).
+- ⏳ User-only: real QoreX run on /pass, submission page, rotate the API keys shared in chat after the hackathon.
 
 ## 22 Nov 2026 — branch feat/api-watchlist-qa (merged)
 
