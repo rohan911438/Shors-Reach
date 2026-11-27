@@ -8,6 +8,7 @@
 
 **Key-level quantum-exposure scanner for Bitcoin, 7 EVM chains and QoreChain · AI remediation plan · soulbound Quantum Pass verified with ML-DSA-87 on-chain**
 
+[![Built on QoreChain](https://build.qorechain.io/badge/shor-s-reach.svg)](https://build.qorechain.io/p/shor-s-reach)
 [![CI](https://github.com/rohan911438/Shors-Reach/actions/workflows/ci.yml/badge.svg)](https://github.com/rohan911438/Shors-Reach/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-violet.svg)](LICENSE)
 [![Live demo](https://img.shields.io/badge/demo-shors--reach.vercel.app-black?logo=vercel)](https://shors-reach.vercel.app)
@@ -15,7 +16,7 @@
 [![Network](https://img.shields.io/badge/QoreChain-diana%20testnet-6d28d9)](https://explore.qore.network/address/0x4f54b69693458523223504b48fa7cd44657a56df)
 [![PQC](https://img.shields.io/badge/PQC-ML--DSA--87-0ea5e9)](#how-the-quantum-pass-works)
 
-[**Live demo**](https://shors-reach.vercel.app) · [**Demo video**](https://youtu.be/4W-PkwzndHk) · [**Contract**](https://explore.qore.network/address/0x4f54b69693458523223504b48fa7cd44657a56df) · [**Scan API docs**](https://shors-reach.vercel.app/#/developers) · [**Methodology**](https://shors-reach.vercel.app/#/methodology) · [**Telegram bot**](https://t.me/ShorsReachBot)
+[**Project page**](https://build.qorechain.io/p/shor-s-reach) · [**Live demo**](https://shors-reach.vercel.app) · [**Demo video**](https://youtu.be/4W-PkwzndHk) · [**Contract**](https://explore.qore.network/address/0x4f54b69693458523223504b48fa7cd44657a56df) · [**Scan API docs**](https://shors-reach.vercel.app/#/developers) · [**Methodology**](https://shors-reach.vercel.app/#/methodology) · [**Telegram bot**](https://t.me/ShorsReachBot)
 
 *Entry for the **QoreChain Developer Fest — "Build Before Q-Day"** · Track: **Quantum Pass** · also applying: **Best AI-Native Build**, **People's Choice***
 
@@ -554,6 +555,7 @@ Inputs are processed in memory and never stored or logged. Full request/response
 
 | What | Link |
 |---|---|
+| Hackathon project page | https://build.qorechain.io/p/shor-s-reach |
 | Live demo | https://shors-reach.vercel.app |
 | Demo video | https://youtu.be/4W-PkwzndHk |
 | GitHub repository | https://github.com/rohan911438/Shors-Reach |
