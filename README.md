@@ -44,10 +44,9 @@
 16. [Run locally](#run-locally)
 17. [Testing and quality](#testing-and-quality)
 18. [Scan API and widget](#scan-api-and-widget)
-19. [Limits (honest)](#limits-honest)
-20. [Documentation index](#documentation-index)
-21. [All links](#all-links)
-22. [Licence](#licence)
+19. [Documentation index](#documentation-index)
+20. [All links](#all-links)
+21. [Licence](#licence)
 
 ---
 
@@ -390,7 +389,7 @@ Shor's Reach is entered in **one main track** and applies for **every special aw
 | 3 | 📣 **People's Choice** | Special award | ✅ Applied | A personal "$X exposed" result and an address-free share card make it naturally shareable |
 | 4 | 🎓 **Quantum Campus** | Special award | ✅ Applied | Every team member is a student |
 | 5 | 🌏 **Regional Award** | Special award | ✅ Applied — India · Asia-Pacific | Team region |
-| 6 | 🏅 **Top-Quality Award** / Quantum Pass raffle | Automatic | ✅ Eligible | Every submission check passed; tests, CI, live demo, honest limits |
+| 6 | 🏅 **Top-Quality Award** / Quantum Pass raffle | Automatic | ✅ Eligible | Every submission check passed; tests, CI, live demo |
 
 ```mermaid
 flowchart LR
@@ -586,17 +585,6 @@ curl -X POST https://shors-reach.vercel.app/api/v1/scan \
 ```
 
 Inputs are processed in memory and never stored or logged. Full request/response schema, reason codes, the two-line `<script>` widget and a live playground: **[shors-reach.vercel.app/#/developers](https://shors-reach.vercel.app/#/developers)**.
-
----
-
-## Limits (honest)
-
-- **A diagnosis, not a rescue.** Shor's Reach never moves BTC or ETH; the Quantum Pass lives on QoreChain **testnet**.
-- **Off-chain signatures are invisible** (permits, "Sign in with…") → shown as *Unknown*, refined by a questionnaire.
-- **Raw-key (P2PK) exposure is only found from the key**, not from an address whose key never spent — paste the public key (that's how Satoshi's genesis key finds coins his address doesn't show).
-- **Pass buckets are self-reported** and coarse; the **attest path trusts one attester** to have checked your native proof (the registry check and single-use proof are on-chain). It goes away once QoreX can sign EVM txs or messages — the fully on-chain `mint()` already exists.
-- Native coins only (no tokens); HD scans use a gap limit of 20 (≤ 200 addresses); public RPCs can rate-limit — failures show as *Unknown*, never safe.
-- Nobody knows when a cryptographically relevant quantum computer will exist. This shows **exposure, not a date**.
 
 ---
 
