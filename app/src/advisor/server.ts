@@ -25,6 +25,8 @@ export interface GenerateResult {
   /** Gemini finishReason: STOP, MAX_TOKENS, SAFETY, RECITATION, … */
   finishReason: string;
   usage?: { in?: number; out?: number };
+  /** Model that actually answered (may be a fallback model). */
+  model?: string;
 }
 /** Thrown by a client for HTTP-level failures so the retry policy can decide. */
 export class UpstreamError extends Error {
@@ -37,33 +39,68 @@ export interface GenerateClient {
   generate: (req: GenerateRequest) => Promise<GenerateResult>;
 }
 
-/** REST client with key rotation: on 401/403/429 the next key is tried. */
-export function geminiClient(keys: string[], timeoutMs = 60_000): GenerateClient {
+/** Backup models tried, in order, when the primary one is overloaded (503/500/504), missing (404) or too slow. */
+export const DEFAULT_FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3-flash-preview"];
+
+export interface GeminiClientOptions {
+  /** Per-call timeout. */
+  timeoutMs?: number;
+  /**
+   * Total time budget for everything this client does, from creation. Vercel kills the function at maxDuration
+   * (60 s), so the budget must end early enough for the caller to still return its rule-based fallback.
+   */
+  budgetMs?: number;
+  fallbackModels?: string[];
+  now?: () => number;
+}
+
+/**
+ * REST client with key rotation and model fallback.
+ * - 401/403/429 → next key, same model.
+ * - 503/500/502/504, 404 or a timeout → next model.
+ * - Never runs past the time budget: it throws UpstreamError(504) instead, so the caller can fall back in time.
+ */
+export function geminiClient(keys: string[], timeoutMsOrOpts: number | GeminiClientOptions = {}): GenerateClient {
+  const o = typeof timeoutMsOrOpts === "number" ? { timeoutMs: timeoutMsOrOpts } : timeoutMsOrOpts;
+  const now = o.now ?? Date.now;
+  const timeoutMs = o.timeoutMs ?? 25_000;
+  const deadline = now() + (o.budgetMs ?? 45_000);
+  const fallbacks = o.fallbackModels ?? DEFAULT_FALLBACK_MODELS;
   let current = 0;
   return {
     async generate(req) {
       let lastStatus = 0;
-      for (let tries = 0; tries < keys.length; tries++) {
-        const key = keys[(current + tries) % keys.length]!;
-        const res = await fetch(`${API}/${encodeURIComponent(req.model)}:generateContent`, {
-          method: "POST",
-          headers: { "content-type": "application/json", "x-goog-api-key": key },
-          signal: AbortSignal.timeout(timeoutMs),
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: req.system }] },
-            contents: [{ role: "user", parts: [{ text: req.user }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseJsonSchema: req.schema,
-              maxOutputTokens: req.maxOutputTokens,
-              temperature: 0.4,
-              // Gemini 3.x thinks by default; low keeps the plan fast. Thoughts are never shown or logged.
-              ...(/gemini-3/.test(req.model) ? { thinkingConfig: { thinkingLevel: "low" } } : {}),
-            },
-          }),
-        });
-        if (res.ok) {
-          current = (current + tries) % keys.length;
+      const models = [req.model, ...fallbacks.filter((m) => m !== req.model)];
+      models: for (const model of models) {
+        for (let tries = 0; tries < keys.length; tries++) {
+          const left = deadline - now() - 1_000;
+          if (left < 2_000) throw new UpstreamError(504);
+          const key = keys[(current + tries) % keys.length]!;
+          let res: Response;
+          try {
+            res = await fetch(`${API}/${encodeURIComponent(model)}:generateContent`, {
+              method: "POST",
+              headers: { "content-type": "application/json", "x-goog-api-key": key },
+              signal: AbortSignal.timeout(Math.min(timeoutMs, left)),
+              body: JSON.stringify({
+                systemInstruction: { parts: [{ text: req.system }] },
+                contents: [{ role: "user", parts: [{ text: req.user }] }],
+                generationConfig: {
+                  responseMimeType: "application/json",
+                  responseJsonSchema: req.schema,
+                  maxOutputTokens: req.maxOutputTokens,
+                  temperature: 0.4,
+                  // Gemini 3.x thinks by default; low keeps the plan fast. Thoughts are never shown or logged.
+                  ...(/gemini-3/.test(model) ? { thinkingConfig: { thinkingLevel: "low" } } : {}),
+                },
+              }),
+            });
+          } catch {
+            lastStatus = 504; // timeout or network error: this model is not answering, try the next one
+            continue models;
+          }
+          if (res.ok) {
+            current = (current + tries) % keys.length;
           const data = (await res.json()) as {
             candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[];
             promptFeedback?: { blockReason?: string };
@@ -74,14 +111,18 @@ export function geminiClient(keys: string[], timeoutMs = 60_000): GenerateClient
             .filter((p) => !p.thought && typeof p.text === "string")
             .map((p) => p.text)
             .join("");
-          return {
-            text,
-            finishReason: data.promptFeedback?.blockReason ? "SAFETY" : (cand?.finishReason ?? "UNKNOWN"),
-            usage: { in: data.usageMetadata?.promptTokenCount, out: data.usageMetadata?.candidatesTokenCount },
-          };
+            return {
+              text,
+              finishReason: data.promptFeedback?.blockReason ? "SAFETY" : (cand?.finishReason ?? "UNKNOWN"),
+              usage: { in: data.usageMetadata?.promptTokenCount, out: data.usageMetadata?.candidatesTokenCount },
+              model,
+            };
+          }
+          lastStatus = res.status;
+          if ([401, 403, 429].includes(res.status)) continue; // next key
+          if ([404, 500, 502, 503, 504].includes(res.status)) continue models; // next model
+          throw new UpstreamError(res.status); // 400 etc.: a bug on our side, don't hammer
         }
-        lastStatus = res.status;
-        if (![401, 403, 429].includes(res.status)) break;
       }
       throw new UpstreamError(lastStatus);
     },
@@ -96,6 +137,8 @@ export function parseKeys(...values: (string | undefined)[]): string[] {
 export interface AdvisorEnv {
   apiKeys?: string[];
   model?: string;
+  /** Backup models when the primary is overloaded (ADVISOR_FALLBACK_MODELS). */
+  fallbackModels?: string[];
   client?: GenerateClient;
   /** Requests per IP per hour. */
   rateLimit?: number;
@@ -123,7 +166,7 @@ export function asksForSecrets(text: string): boolean {
 }
 
 // ---------------------------------------------------------------- model call
-type AttemptResult = { ok: true; plan: Plan } | { ok: false; reason: string; retry: boolean };
+type AttemptResult = { ok: true; plan: Plan; model?: string } | { ok: false; reason: string; retry: boolean };
 
 async function attempt(client: GenerateClient, model: string, s: Summary, log: (m: string) => void): Promise<AttemptResult> {
   let r: GenerateResult;
@@ -138,7 +181,7 @@ async function attempt(client: GenerateClient, model: string, s: Summary, log: (
     }
     return { ok: false, reason: "network", retry: true };
   }
-  log(`advisor tokens in=${r.usage?.in} out=${r.usage?.out} finish=${r.finishReason}`);
+  log(`advisor model=${r.model ?? model} tokens in=${r.usage?.in} out=${r.usage?.out} finish=${r.finishReason}`);
   if (r.finishReason === "SAFETY" || r.finishReason === "RECITATION" || r.finishReason === "PROHIBITED_CONTENT")
     return { ok: false, reason: "refusal", retry: false };
   if (r.finishReason === "MAX_TOKENS") return { ok: false, reason: "truncated", retry: true };
@@ -155,7 +198,7 @@ async function attempt(client: GenerateClient, model: string, s: Summary, log: (
   if (containsIdentifier(out) || asksForSecrets(out))
     return { ok: false, reason: "unsafe-output", retry: true };
   const plan = { ...parsed.data, actions: [...parsed.data.actions].sort((a, b) => a.priority - b.priority) };
-  return { ok: true, plan };
+  return { ok: true, plan, model: r.model };
 }
 
 export async function advise(s: Summary, env: AdvisorEnv): Promise<AdviceResponse> {
@@ -163,11 +206,11 @@ export async function advise(s: Summary, env: AdvisorEnv): Promise<AdviceRespons
   const model = env.model || DEFAULT_MODEL;
   const keys = env.apiKeys ?? [];
   if (!env.client && keys.length === 0) return { plan: fallbackPlan(s), source: "fallback", fallbackReason: "no-api-key" };
-  const client = env.client ?? geminiClient(keys);
+  const client = env.client ?? geminiClient(keys, { timeoutMs: 25_000, budgetMs: 45_000, fallbackModels: env.fallbackModels });
   let last = "unknown";
   for (let i = 0; i < 2; i++) {
     const r = await attempt(client, model, s, log);
-    if (r.ok) return { plan: r.plan, source: "ai", model };
+    if (r.ok) return { plan: r.plan, source: "ai", model: r.model ?? model };
     last = r.reason;
     if (!r.retry) break;
   }

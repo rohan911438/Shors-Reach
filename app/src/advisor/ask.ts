@@ -180,12 +180,12 @@ export async function ask(r: AskRequest, env: AdvisorEnv): Promise<AskResponse> 
   const keys = env.apiKeys ?? [];
   const fb = (reason: string): AskResponse => ({ ...fallbackAnswer(r), source: "fallback", fallbackReason: reason });
   if (!env.client && keys.length === 0) return fb("no-api-key");
-  const client: GenerateClient = env.client ?? geminiClient(keys, 30_000);
+  const client: GenerateClient = env.client ?? geminiClient(keys, { timeoutMs: 20_000, budgetMs: 45_000, fallbackModels: env.fallbackModels });
   let last = "unknown";
   for (let i = 0; i < 2; i++) {
     try {
       const out = await client.generate({ model, system: ASK_SYSTEM_PROMPT, user: askMessage(r), schema: ANSWER_JSON_SCHEMA, maxOutputTokens: 3000 });
-      log(`ask tokens in=${out.usage?.in} out=${out.usage?.out} finish=${out.finishReason}`);
+      log(`ask model=${out.model ?? model} tokens in=${out.usage?.in} out=${out.usage?.out} finish=${out.finishReason}`);
       if (out.finishReason !== "STOP") {
         last = out.finishReason === "MAX_TOKENS" ? "truncated" : "refusal";
         if (last === "refusal") break;
@@ -201,7 +201,7 @@ export async function ask(r: AskRequest, env: AdvisorEnv): Promise<AskResponse> 
         last = "unsafe-output";
         continue;
       }
-      return { ...parsed.data, source: "ai", model };
+      return { ...parsed.data, source: "ai", model: out.model ?? model };
     } catch (err) {
       if (err instanceof UpstreamError) {
         last = `api-${err.status || "error"}`;

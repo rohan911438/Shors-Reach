@@ -1,7 +1,7 @@
 /**
  * POST /api/advise — Vercel Node function. Receives ONLY the anonymised scan summary; returns a plan.
  * Secrets: GEMINI_API_KEYS (comma separated, rotated on 401/403/429) or GEMINI_API_KEY.
- * Optional: ADVISOR_MODEL (default gemini-3.5-flash). Logs token counts only — never payloads.
+ * Optional: ADVISOR_MODEL (default gemini-3.5-flash), ADVISOR_FALLBACK_MODELS (comma separated backups). Logs token counts only — never payloads.
  */
 import { handleAdvise, parseKeys } from "../src/advisor/server.js";
 
@@ -12,6 +12,7 @@ export async function POST(request: Request): Promise<Response> {
     {
       apiKeys: parseKeys(process.env.GEMINI_API_KEYS, process.env.GEMINI_API_KEY),
       model: process.env.ADVISOR_MODEL,
+      fallbackModels: process.env.ADVISOR_FALLBACK_MODELS ? parseKeys(process.env.ADVISOR_FALLBACK_MODELS) : undefined,
       log: (m) => console.log(m),
     },
     ip,

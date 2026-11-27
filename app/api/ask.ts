@@ -9,7 +9,7 @@ export async function POST(request: Request): Promise<Response> {
   const ip = (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0]!.trim();
   return handleAsk(
     request,
-    { apiKeys: parseKeys(process.env.GEMINI_API_KEYS, process.env.GEMINI_API_KEY), model: process.env.ADVISOR_MODEL, log: (m) => console.log(m) },
+    { apiKeys: parseKeys(process.env.GEMINI_API_KEYS, process.env.GEMINI_API_KEY), model: process.env.ADVISOR_MODEL, fallbackModels: process.env.ADVISOR_FALLBACK_MODELS ? parseKeys(process.env.ADVISOR_FALLBACK_MODELS) : undefined, log: (m) => console.log(m) },
     ip,
   );
 }
