@@ -15,6 +15,17 @@ Category:
 Quantum Pass
 
 Description:
+About 6.3 million BTC (roughly 31% of supply) already sits behind public keys that are visible on-chain. A large enough quantum computer running Shor's algorithm could derive the private keys for those coins. Most holders have no idea whether they are exposed, because address checkers look at one address while the real risk belongs to the key: the same key shows up in seven Bitcoin address forms, on every EVM chain, and in Satoshi-era outputs that have no address at all.
+
+Shor's Reach shows you what a quantum attacker would see. Paste a Bitcoin address, public key or xpub, any 0x address, or a qor1 address. The scanner runs in your browser and checks the key, not just the address, across Bitcoin, 7 EVM chains and QoreChain. Each holding gets a clear verdict (Exposed now, Exposed on spend, PQ-protected, or Unknown) with its value in BTC and USD. Every red verdict links to the exact transaction that revealed the key; if there is no proof, it is never marked red. It catches what simpler tools miss: raw-key P2PK coins, Taproot, reused keys across address types and chains, Safe owners and EIP-7702 delegations.
+
+An AI advisor (Google Gemini) turns the results into a calm, step-by-step plan, and you can ask follow-up questions. It only sees an anonymised summary, never your addresses, and you can see exactly what was sent.
+
+Then fix the part you can fix today: QoreChain. Shor's Reach checks whether your QoreChain account has a registered ML-DSA-87 post-quantum key and whether an EVM window leaves funds open to ECDSA. Once the account is protected, you mint a soulbound Quantum Pass. The contract verifies your ML-DSA-87 signature on-chain (or checks a hybrid secp256k1 + ML-DSA-87 transaction sent from QoreX) and binds the pass to your registered key.
+
+You can also add addresses to a watchlist with Telegram alerts, share a card that contains no addresses, and use the public Scan API and embeddable widget for wallets and exchanges.
+
+Short version (if the form limits the length):
 Shor's Reach scans Bitcoin, 7 EVM chains and QoreChain at the key level — not the address — and shows what a quantum computer could attack today, with the transaction that proves each verdict. It catches what address checkers miss: Satoshi-era raw-key coins, Taproot, sibling address forms, cross-chain key reuse. An AI advisor turns it into a calm plan from an anonymised summary. Then you mint a soulbound Quantum Pass on QoreChain, proven by a hybrid secp256k1 + ML-DSA-87 transaction and bound to your registered post-quantum key.
 
 How it's made:
