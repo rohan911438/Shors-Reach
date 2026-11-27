@@ -206,7 +206,7 @@ export async function advise(s: Summary, env: AdvisorEnv): Promise<AdviceRespons
   const model = env.model || DEFAULT_MODEL;
   const keys = env.apiKeys ?? [];
   if (!env.client && keys.length === 0) return { plan: fallbackPlan(s), source: "fallback", fallbackReason: "no-api-key" };
-  const client = env.client ?? geminiClient(keys, { timeoutMs: 25_000, budgetMs: 45_000, fallbackModels: env.fallbackModels });
+  const client = env.client ?? geminiClient(keys, { timeoutMs: 15_000, budgetMs: 45_000, fallbackModels: env.fallbackModels });
   let last = "unknown";
   for (let i = 0; i < 2; i++) {
     const r = await attempt(client, model, s, log);

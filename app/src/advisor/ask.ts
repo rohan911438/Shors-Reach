@@ -180,7 +180,7 @@ export async function ask(r: AskRequest, env: AdvisorEnv): Promise<AskResponse> 
   const keys = env.apiKeys ?? [];
   const fb = (reason: string): AskResponse => ({ ...fallbackAnswer(r), source: "fallback", fallbackReason: reason });
   if (!env.client && keys.length === 0) return fb("no-api-key");
-  const client: GenerateClient = env.client ?? geminiClient(keys, { timeoutMs: 20_000, budgetMs: 45_000, fallbackModels: env.fallbackModels });
+  const client: GenerateClient = env.client ?? geminiClient(keys, { timeoutMs: 12_000, budgetMs: 45_000, fallbackModels: env.fallbackModels });
   let last = "unknown";
   for (let i = 0; i < 2; i++) {
     try {
